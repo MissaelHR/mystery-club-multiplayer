@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/homescreen.tsx","./src/components/lobbyscreen.tsx","./src/components/revealscreen.tsx","./src/components/roundscreen.tsx","./src/components/scoreboard.tsx","./src/components/winnerscreen.tsx","./src/hooks/usecountdown.ts","./src/lib/socket.ts","../shared/game.ts"],"version":"5.9.3"}
