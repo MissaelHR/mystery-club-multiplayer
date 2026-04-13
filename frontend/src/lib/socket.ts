@@ -6,9 +6,7 @@ function getDefaultServerUrl() {
     return "http://localhost:4000";
   }
 
-  const protocol = window.location.protocol === "https:" ? "https:" : "http:";
-  const hostname = window.location.hostname || "localhost";
-  return `${protocol}//${hostname}:4000`;
+  return window.location.origin;
 }
 
 const serverUrl = import.meta.env.VITE_SERVER_URL ?? getDefaultServerUrl();
