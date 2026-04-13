@@ -7,37 +7,33 @@ interface WinnerScreenProps {
 }
 
 export function WinnerScreen({ room, me, onRestart }: WinnerScreenProps) {
-  const champion = room.winners[0];
-  const reveal = room.reveal;
-
-  if (!reveal) {
+  if (!room.finished) {
     return null;
   }
 
-  return (
-    <section className="panel-strong p-8">
-      <p className="text-sm uppercase tracking-[0.35em] text-gold/75">Partida finalizada</p>
-      <h2 className="mt-3 font-display text-5xl text-parchment">{reveal.headline}</h2>
-      <p className="mt-5 max-w-2xl text-lg leading-8 text-mist/85">
-        {room.selectedChallenge
-          ? `Capítulo ${room.selectedChallenge.chapterNumber}: ${room.selectedChallenge.chapterTitle}. ${room.selectedChallenge.minigameTitle}.`
-          : "La misión ha terminado."}
-      </p>
+  const champion = room.winners[0];
 
-      <div className="mt-8 rounded-3xl border border-gold/25 bg-gold/10 p-6">
-        <p className="text-sm uppercase tracking-[0.25em] text-gold/75">Respuesta correcta</p>
-        <p className="mt-3 text-2xl text-parchment">{reveal.correctAnswer}</p>
-        <p className="mt-4 leading-7 text-mist/85">{reveal.explanation}</p>
-      </div>
+  return (
+    <section className="panel-strong p-5 md:p-8">
+      <p className="text-sm uppercase tracking-[0.35em] text-gold/75">Partida finalizada</p>
+      <h2 className="mt-3 font-display text-4xl text-parchment md:text-5xl">{room.finished.headline}</h2>
+      <p className="mt-4 max-w-3xl text-base leading-8 text-mist/85 md:text-lg">{room.finished.explanation}</p>
+
+      {room.finished.correctAnswer ? (
+        <div className="mt-6 rounded-3xl border border-gold/25 bg-gold/10 p-6">
+          <p className="text-sm uppercase tracking-[0.25em] text-gold/75">Respuesta correcta</p>
+          <p className="mt-2 text-2xl text-parchment">{room.finished.correctAnswer}</p>
+        </div>
+      ) : null}
 
       <div className="mt-6 grid gap-3">
-        {reveal.results.map((result) => (
+        {room.finished.stageResults.map((result) => (
           <div key={result.playerId} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="font-semibold text-parchment">{result.playerName}</p>
                 <p className="mt-1 text-sm text-mist/70">
-                  {result.answer ? `Respuesta: ${result.answer}` : "No alcanzó a responder"}
+                  {result.answer ? `Respuesta: ${result.answer}` : "Sin respuesta registrada"}
                 </p>
               </div>
               <div className="text-right">
@@ -52,24 +48,24 @@ export function WinnerScreen({ room, me, onRestart }: WinnerScreenProps) {
       </div>
 
       {champion ? (
-        <div className="mt-8 rounded-[2rem] border border-gold/25 bg-gold/10 p-8">
-          <p className="text-sm uppercase tracking-[0.25em] text-gold/75">Líder del marcador</p>
-          <h3 className="mt-3 font-display text-4xl text-parchment">{champion.name}</h3>
+        <div className="mt-6 rounded-[2rem] border border-gold/25 bg-gold/10 p-6">
+          <p className="text-sm uppercase tracking-[0.25em] text-gold/75">Puntero del marcador</p>
+          <h3 className="mt-2 font-display text-4xl text-parchment">{champion.name}</h3>
           <p className="mt-2 text-xl text-gold">{champion.score} puntos</p>
         </div>
       ) : null}
 
-      <div className="mt-8 flex flex-wrap items-center gap-4">
+      <div className="mt-6">
         {me?.isHost ? (
           <button
             onClick={onRestart}
             className="rounded-2xl bg-gold px-6 py-3 font-semibold text-slate-950 transition hover:bg-amber-300"
           >
-            Reiniciar y volver al panel
+            Reiniciar partida
           </button>
         ) : (
           <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-mist/75">
-            Esperando a que el anfitrión reinicie la siguiente partida.
+            Esperando a que el anfitrión reinicie la partida.
           </div>
         )}
       </div>

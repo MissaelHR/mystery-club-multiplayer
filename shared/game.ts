@@ -1,10 +1,16 @@
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 6;
 export const ROOM_TTL_MS = 30 * 60 * 1000;
+export const CHAPTER_NUMBER = 28;
+export const CHAPTER_TITLE = "Drones al rescate";
 
-export type GamePhase = "lobby" | "question" | "finished";
-export type ChallengeType = "pista-relampago" | "memoria-flash" | "decision-secreta";
-export type RevealOutcome = "victory" | "mistake" | "timeout";
+export type GamePhase = "lobby" | "playing" | "finished";
+export type MiniGameKind =
+  | "preguntas-rapidas"
+  | "memoria-flash"
+  | "rastro-drone"
+  | "decision-secreta"
+  | "secuencia-de-altura";
 
 export interface PlayerPublic {
   id: string;
@@ -12,59 +18,96 @@ export interface PlayerPublic {
   score: number;
   isHost: boolean;
   connected: boolean;
+  answeredCurrentStage: boolean;
 }
 
-export interface ChallengeCatalogItem {
+export interface MiniGameCatalogItem {
   id: string;
   chapterNumber: number;
   chapterTitle: string;
-  challengeType: ChallengeType;
-  minigameTitle: string;
-  teaser: string;
+  title: string;
+  kind: MiniGameKind;
+  summary: string;
 }
 
-export interface RoundDefinition extends ChallengeCatalogItem {
-  storyText: string;
+export const MINI_GAME_CATALOG: MiniGameCatalogItem[] = [
+  {
+    id: "ruta-del-guardia",
+    chapterNumber: CHAPTER_NUMBER,
+    chapterTitle: CHAPTER_TITLE,
+    title: "Ruta del guardia",
+    kind: "preguntas-rapidas",
+    summary: "Tres rondas de decisiones para detectar riesgos antes de que Amanda sea vista.",
+  },
+  {
+    id: "memoria-de-drones",
+    chapterNumber: CHAPTER_NUMBER,
+    chapterTitle: CHAPTER_TITLE,
+    title: "Memoria de drones",
+    kind: "memoria-flash",
+    summary: "Recuerda secuencias cortas inspiradas en el rescate de Benson.",
+  },
+  {
+    id: "comandos-de-eric",
+    chapterNumber: CHAPTER_NUMBER,
+    chapterTitle: CHAPTER_TITLE,
+    title: "Comandos de Eric",
+    kind: "rastro-drone",
+    summary: "Sigue las instrucciones correctas de Eric para mantener la misión en curso.",
+  },
+  {
+    id: "escondite-transparente",
+    chapterNumber: CHAPTER_NUMBER,
+    chapterTitle: CHAPTER_TITLE,
+    title: "Escondite transparente",
+    kind: "decision-secreta",
+    summary: "Elige la mejor cobertura cuando todo alrededor parece visible.",
+  },
+  {
+    id: "pulso-en-la-altura",
+    chapterNumber: CHAPTER_NUMBER,
+    chapterTitle: CHAPTER_TITLE,
+    title: "Pulso en la altura",
+    kind: "secuencia-de-altura",
+    summary: "Encadena pasos de sangre fría para que Amanda siga avanzando.",
+  },
+];
+
+export interface StagePublic {
+  id: string;
+  title: string;
   prompt: string;
   inputLabel: string;
   answerKind: "single-choice" | "text";
   options?: string[];
+  memorySequence?: string[];
+  memoryRevealMs?: number;
+}
+
+export interface StageDefinition extends StagePublic {
   answer: string;
   explanation: string;
-  timeLimitSec: number;
-  memorySequence?: string[];
-  memoryRevealMs?: number;
 }
 
-export interface RoundPublic extends ChallengeCatalogItem {
-  storyText: string;
-  prompt: string;
-  inputLabel: string;
-  answerKind: "single-choice" | "text";
-  options?: string[];
-  timeLimitSec: number;
-  deadlineAt: number;
-  startedAt: number;
-  memorySequence?: string[];
-  memoryRevealMs?: number;
+export interface MiniGameDefinition extends MiniGameCatalogItem {
+  stages: StageDefinition[];
 }
 
-export interface PlayerRoundResult {
+export interface StageResult {
   playerId: string;
   playerName: string;
   answer: string | null;
   isCorrect: boolean;
   pointsEarned: number;
-  responseTimeMs: number | null;
 }
 
-export interface RoundReveal {
-  outcome: RevealOutcome;
+export interface GameFinishedState {
+  outcome: "victory" | "mistake";
   headline: string;
-  correctAnswer: string;
   explanation: string;
-  finishedByPlayerName?: string;
-  results: PlayerRoundResult[];
+  failedPlayerName?: string;
+  correctAnswer?: string;
+  stageResults: StageResult[];
 }
 
 export interface WinnerSummary {
@@ -78,23 +121,30 @@ export interface RoomState {
   phase: GamePhase;
   hostId: string;
   players: PlayerPublic[];
-  availableChallenges: ChallengeCatalogItem[];
-  selectedChallengeId: string | null;
-  selectedChallenge: ChallengeCatalogItem | null;
-  round: RoundPublic | null;
-  reveal: RoundReveal | null;
-  submittedPlayerIds: string[];
+  selectedMiniGameId: string;
+  selectedMiniGame: MiniGameCatalogItem;
+  availableMiniGames: MiniGameCatalogItem[];
+  currentStageNumber: number;
+  totalStages: number;
+  stage: StagePublic | null;
+  finished: GameFinishedState | null;
   winners: WinnerSummary[];
   lastActivityAt: number;
 }
 
 export interface CreateRoomPayload {
   playerName: string;
+  miniGameId: string;
 }
 
 export interface JoinRoomPayload {
   playerName: string;
   roomCode: string;
+}
+
+export interface ResumeSessionPayload {
+  roomCode: string;
+  playerId: string;
 }
 
 export interface JoinRoomResponse {
@@ -110,20 +160,22 @@ export interface SubmitAnswerPayload {
 
 export interface ConfigureGamePayload {
   roomCode: string;
-  challengeId: string;
+  miniGameId: string;
 }
 
-export interface StartGamePayload {
+export interface RoomPayload {
   roomCode: string;
 }
 
-export interface RestartGamePayload {
+export interface KickPlayerPayload {
   roomCode: string;
+  targetPlayerId: string;
 }
 
 export interface ServerToClientEvents {
   "room:update": (room: RoomState) => void;
   "room:error": (message: string) => void;
+  "room:kicked": (message: string) => void;
 }
 
 export interface ClientToServerEvents {
@@ -135,9 +187,14 @@ export interface ClientToServerEvents {
     payload: JoinRoomPayload,
     callback: (response: JoinRoomResponse) => void,
   ) => void;
-  "room:leave": (payload: { roomCode: string }) => void;
+  "room:resume": (
+    payload: ResumeSessionPayload,
+    callback: (response: JoinRoomResponse) => void,
+  ) => void;
+  "room:leave": (payload: RoomPayload) => void;
+  "room:kick": (payload: KickPlayerPayload) => void;
   "game:configure": (payload: ConfigureGamePayload) => void;
-  "game:start": (payload: StartGamePayload) => void;
-  "game:restart": (payload: RestartGamePayload) => void;
+  "game:start": (payload: RoomPayload) => void;
+  "game:restart": (payload: RoomPayload) => void;
   "round:submit": (payload: SubmitAnswerPayload) => void;
 }

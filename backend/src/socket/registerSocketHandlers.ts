@@ -11,9 +11,11 @@ import {
   expireInactiveRooms,
   getRoom,
   joinRoom,
+  kickPlayer,
   leaveRoom,
   markDisconnected,
   restartGame,
+  resumeSession,
   startGame,
   submitAnswer,
   toRoomState,
@@ -21,6 +23,15 @@ import {
 
 type MysterySocket = Socket<ClientToServerEvents, ServerToClientEvents>;
 type MysteryServer = Server<ClientToServerEvents, ServerToClientEvents>;
+
+function findPlayerIdBySocket(roomCode: string, socketId: string) {
+  const room = getRoom(roomCode);
+  if (!room) {
+    return null;
+  }
+
+  return [...room.players.values()].find((player) => player.socketId === socketId)?.id ?? null;
+}
 
 function emitRoom(io: MysteryServer, roomCode: string) {
   const room = getRoom(roomCode);
@@ -58,7 +69,7 @@ export function registerSocketHandlers(io: MysteryServer) {
         return;
       }
 
-      const { room, playerId } = createRoom(payload.playerName, socket.id);
+      const { room, playerId } = createRoom(payload.playerName, payload.miniGameId, socket.id);
       socket.join(room.code);
       callback({
         ok: true,
@@ -86,27 +97,68 @@ export function registerSocketHandlers(io: MysteryServer) {
       emitRoom(io, room.code);
     });
 
+    socket.on("room:resume", (payload, callback) => {
+      const result = resumeSession(payload.roomCode, payload.playerId, socket.id);
+      if (!("room" in result)) {
+        callback({ ok: false, error: result.error });
+        return;
+      }
+
+      const { room, playerId } = result;
+      socket.join(room.code);
+      callback({ ok: true, playerId });
+      emitRoom(io, room.code);
+    });
+
     socket.on("room:leave", ({ roomCode }) => {
       socket.leave(roomCode);
-      const room = leaveRoom(roomCode, socket.id);
+      const playerId = findPlayerIdBySocket(roomCode, socket.id);
+      if (!playerId) {
+        return;
+      }
+      const room = leaveRoom(roomCode, playerId);
       if (room) {
         emitRoom(io, room.code);
       }
     });
 
-    socket.on("game:configure", ({ roomCode, challengeId }) => {
+    socket.on("room:kick", ({ roomCode, targetPlayerId }) => {
+      const room = getRoom(roomCode);
+      if (!room) {
+        emitError(socket, "Sala no encontrada.");
+        return;
+      }
+      if (room.hostId !== findPlayerIdBySocket(roomCode, socket.id)) {
+        emitError(socket, "Solo el anfitrión puede expulsar jugadores.");
+        return;
+      }
+
+      const result = kickPlayer(roomCode, targetPlayerId);
+      if (!("kickedSocketId" in result)) {
+        emitError(socket, result.error);
+        return;
+      }
+
+      io.to(result.kickedSocketId).emit("room:kicked", "El anfitrión te expulsó de la sala.");
+      io.sockets.sockets.get(result.kickedSocketId)?.leave(roomCode);
+      if (result.room) {
+        emitRoom(io, result.room.code);
+      }
+    });
+
+    socket.on("game:configure", ({ roomCode, miniGameId }) => {
       const room = getRoom(roomCode);
       if (!room) {
         emitError(socket, "Sala no encontrada.");
         return;
       }
 
-      if (room.hostId !== socket.id) {
-        emitError(socket, "Solo el anfitrión puede elegir capítulo y minijuego.");
+      if (room.hostId !== findPlayerIdBySocket(roomCode, socket.id)) {
+        emitError(socket, "Solo el anfitrión puede elegir el minijuego.");
         return;
       }
 
-      const result = configureGame(room, challengeId);
+      const result = configureGame(room, miniGameId);
       if ("error" in result && result.error) {
         emitError(socket, result.error);
         return;
@@ -122,7 +174,7 @@ export function registerSocketHandlers(io: MysteryServer) {
         return;
       }
 
-      if (room.hostId !== socket.id) {
+      if (room.hostId !== findPlayerIdBySocket(roomCode, socket.id)) {
         emitError(socket, "Solo el anfitrión puede iniciar la partida.");
         return;
       }
@@ -143,7 +195,7 @@ export function registerSocketHandlers(io: MysteryServer) {
         return;
       }
 
-      if (room.hostId !== socket.id) {
+      if (room.hostId !== findPlayerIdBySocket(roomCode, socket.id)) {
         emitError(socket, "Solo el anfitrión puede reiniciar la partida.");
         return;
       }
