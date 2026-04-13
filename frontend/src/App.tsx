@@ -209,7 +209,9 @@ function App() {
           <Scoreboard players={room.players} winners={room.winners} isPlaying={room.phase === "playing"} />
           <section className="panel p-5">
             <h3 className="font-display text-2xl text-parchment">Reglas</h3>
-            <p className="mt-4 leading-7 text-mist/80">Todos ven el marcador en vivo. Un fallo cierra la partida.</p>
+            <p className="mt-4 leading-7 text-mist/80">
+              Modo arcade: cada ronda suma puntos. Los fallos no te sacan; gana quien termine arriba.
+            </p>
           </section>
         </div>
       </div>

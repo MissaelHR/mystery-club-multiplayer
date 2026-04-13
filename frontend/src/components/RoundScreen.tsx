@@ -77,7 +77,7 @@ export function RoundScreen({ room, me, onSubmit }: RoundScreenProps) {
       </div>
 
       <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-5">
-        <p className="text-sm uppercase tracking-[0.25em] text-mist/50">Misión activa</p>
+        <p className="text-sm uppercase tracking-[0.25em] text-mist/50">Arcade en curso</p>
         <p className="mt-3 text-lg leading-8 text-mist/90">{stage.prompt}</p>
         <div className="mt-4 flex gap-2">
           {Array.from({ length: room.totalStages }).map((_, index) => (
@@ -199,10 +199,10 @@ export function RoundScreen({ room, me, onSubmit }: RoundScreenProps) {
             disabled={submittedAlready}
             className="rounded-2xl bg-gold px-6 py-3 font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-slate-500"
           >
-            Enviar respuesta
+            Bloquear jugada
           </button>
-          <p className="text-sm text-mist/70">Acierta para seguir. Si fallas, termina la misión.</p>
-          {submittedAlready ? <p className="text-sm text-gold/80">Ya respondiste esta etapa.</p> : null}
+          <p className="text-sm text-mist/70">Cada etapa suma. Si fallas, sigues vivo.</p>
+          {submittedAlready ? <p className="text-sm text-gold/80">Jugada enviada.</p> : null}
         </div>
       </form>
     </section>

@@ -69,11 +69,9 @@ export interface StageResult {
 }
 
 export interface GameFinishedState {
-  outcome: "victory" | "mistake";
+  outcome: "victory";
   headline: string;
   explanation: string;
-  failedPlayerName?: string;
-  correctAnswer?: string;
   stageResults: StageResult[];
 }
 

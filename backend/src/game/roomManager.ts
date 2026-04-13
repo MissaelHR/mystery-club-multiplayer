@@ -85,6 +85,16 @@ function getStages(room: RoomInternal) {
   return stagesByDifficulty[room.selectedDifficulty];
 }
 
+function getStagePoints(room: RoomInternal) {
+  const difficultyBonus: Record<DifficultyLevel, number> = {
+    explorador: 90,
+    agente: 130,
+    leyenda: 180,
+  };
+
+  return difficultyBonus[room.selectedDifficulty] + room.currentStageIndex * 25;
+}
+
 function toStagePublic(stage: StageDefinition | null): StagePublic | null {
   if (!stage) {
     return null;
@@ -134,13 +144,13 @@ function advanceStage(room: RoomInternal) {
     room.stage = null;
     room.finished = {
       outcome: "victory",
-      headline: "Ruta completada",
-      explanation: `Amanda superó la torre en modo ${room.selectedDifficulty}.`,
+      headline: "Arcade completado",
+      explanation: "La misión siguió hasta el final. Gana quien sumó más puntos.",
       stageResults: sortPlayers(room.players.values()).map((player) => ({
         playerId: player.id,
         playerName: player.name,
         answer: null,
-        isCorrect: true,
+        isCorrect: false,
         pointsEarned: player.score,
       })),
     };
@@ -151,28 +161,6 @@ function advanceStage(room: RoomInternal) {
   room.phase = "playing";
   room.finished = null;
   resetAnswers(room);
-}
-
-function finishWithMistake(room: RoomInternal, failedPlayerName: string, correctAnswer: string, explanation: string) {
-  room.phase = "finished";
-  room.stage = null;
-  room.finished = {
-    outcome: "mistake",
-    headline: `${failedPlayerName} activó la alarma`,
-    explanation,
-    failedPlayerName,
-    correctAnswer,
-    stageResults: sortPlayers(room.players.values()).map((player) => {
-      const submission = room.submissions.get(player.id);
-      return {
-        playerId: player.id,
-        playerName: player.name,
-        answer: submission?.answer ?? null,
-        isCorrect: submission?.isCorrect ?? false,
-        pointsEarned: submission?.pointsEarned ?? 0,
-      };
-    }),
-  };
 }
 
 export function createRoom(playerName: string, difficulty: DifficultyLevel, socketId: string) {
@@ -430,7 +418,7 @@ export function submitAnswer(room: RoomInternal, playerId: string, rawAnswer: st
   const normalizedAnswer = normalizeText(rawAnswer);
   const expectedAnswer = normalizeText(room.stage.answer);
   const isCorrect = normalizedAnswer === expectedAnswer;
-  const pointsEarned = isCorrect ? 100 : 0;
+  const pointsEarned = isCorrect ? getStagePoints(room) : 0;
 
   player.answeredCurrentStage = true;
   if (isCorrect) {
@@ -442,11 +430,6 @@ export function submitAnswer(room: RoomInternal, playerId: string, rawAnswer: st
     pointsEarned,
   });
   room.lastActivityAt = Date.now();
-
-  if (!isCorrect) {
-    finishWithMistake(room, player.name, room.stage.answer, room.stage.explanation);
-    return { room };
-  }
 
   const connectedPlayers = [...room.players.values()].filter((candidate) => candidate.connected);
   if (connectedPlayers.length > 0 && connectedPlayers.every((candidate) => candidate.answeredCurrentStage)) {
