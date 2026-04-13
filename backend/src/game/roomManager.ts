@@ -1,10 +1,13 @@
 import {
   DIFFICULTY_OPTIONS,
   DifficultyLevel,
+  DrawingStroke,
   GAME_SUBTITLE,
   GAME_TITLE,
   MAX_PLAYERS,
+  MINI_GAME_CATALOG,
   MIN_PLAYERS,
+  MiniGameType,
   PlayerPublic,
   ROOM_TTL_MS,
   RoomState,
@@ -12,7 +15,7 @@ import {
   StagePublic,
   WinnerSummary,
 } from "../../../shared/game";
-import { stagesByDifficulty } from "./rounds";
+import { buildStageQueue } from "./rounds";
 
 interface PlayerInternal {
   id: string;
@@ -36,6 +39,8 @@ interface RoomInternal {
   players: Map<string, PlayerInternal>;
   phase: RoomState["phase"];
   selectedDifficulty: DifficultyLevel;
+  configuredMiniGames: MiniGameType[];
+  stageQueue: StageDefinition[];
   currentStageIndex: number;
   stage: StageDefinition | null;
   submissions: Map<string, Submission>;
@@ -43,20 +48,10 @@ interface RoomInternal {
   lastActivityAt: number;
 }
 
-type JoinRoomResult =
-  | { error: string }
-  | {
-      room: RoomInternal;
-      playerId: string;
-    };
+type JoinRoomResult = { error: string } | { room: RoomInternal; playerId: string };
+type KickResult = { error: string } | { room: RoomInternal | null; kickedSocketId: string };
 
-type KickResult =
-  | { error: string }
-  | {
-      room: RoomInternal | null;
-      kickedSocketId: string;
-    };
-
+const DEFAULT_PLAYLIST: MiniGameType[] = ["crucigrama", "sopa", "dibujo", "memorama"];
 const rooms = new Map<string, RoomInternal>();
 const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
@@ -81,47 +76,18 @@ function normalizeText(value: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-function getStages(room: RoomInternal) {
-  return stagesByDifficulty[room.selectedDifficulty];
-}
+function sanitizePlaylist(playlist: MiniGameType[] | undefined) {
+  const validIds = new Set(MINI_GAME_CATALOG.map((game) => game.id));
+  const seen = new Set<MiniGameType>();
+  const sanitized = (playlist ?? DEFAULT_PLAYLIST).filter((miniGame): miniGame is MiniGameType => {
+    if (!validIds.has(miniGame) || seen.has(miniGame)) {
+      return false;
+    }
+    seen.add(miniGame);
+    return true;
+  });
 
-function getStagePoints(room: RoomInternal) {
-  const difficultyBonus: Record<DifficultyLevel, number> = {
-    explorador: 90,
-    agente: 130,
-    leyenda: 180,
-  };
-
-  return difficultyBonus[room.selectedDifficulty] + room.currentStageIndex * 25;
-}
-
-function buildFinalResults(room: RoomInternal) {
-  return sortPlayers(room.players.values()).map((player) => ({
-    playerId: player.id,
-    playerName: player.name,
-    answer: null,
-    isCorrect: false,
-    pointsEarned: player.score,
-  }));
-}
-
-function toStagePublic(stage: StageDefinition | null): StagePublic | null {
-  if (!stage) {
-    return null;
-  }
-
-  return {
-    id: stage.id,
-    title: stage.title,
-    prompt: stage.prompt,
-    inputLabel: stage.inputLabel,
-    mode: stage.mode,
-    hint: stage.hint,
-    answerKind: stage.answerKind,
-    options: stage.options,
-    memorySequence: stage.memorySequence,
-    memoryRevealMs: stage.memoryRevealMs,
-  };
+  return sanitized.length > 0 ? sanitized : DEFAULT_PLAYLIST;
 }
 
 function sortPlayers(players: Iterable<PlayerInternal>) {
@@ -149,24 +115,102 @@ function resetAnswers(room: RoomInternal) {
   }
 }
 
+function getConnectedPlayers(room: RoomInternal) {
+  return [...room.players.values()].filter((player) => player.connected);
+}
+
+function getDrawingDrawerId(stage: StageDefinition | null) {
+  return stage?.miniGameType === "dibujo" ? stage.drawing?.drawerPlayerId ?? null : null;
+}
+
+function getStagePoints(room: RoomInternal, stage: StageDefinition) {
+  const difficultyBonus: Record<DifficultyLevel, number> = {
+    explorador: 110,
+    agente: 160,
+    leyenda: 220,
+  };
+
+  const gameBonus: Record<MiniGameType, number> = {
+    crucigrama: 35,
+    sopa: 45,
+    dibujo: 55,
+    memorama: 40,
+  };
+
+  return difficultyBonus[room.selectedDifficulty] + gameBonus[stage.miniGameType] + room.currentStageIndex * 20;
+}
+
+function buildFinalResults(room: RoomInternal) {
+  return sortPlayers(room.players.values()).map((player) => ({
+    playerId: player.id,
+    playerName: player.name,
+    answer: null,
+    isCorrect: false,
+    pointsEarned: player.score,
+  }));
+}
+
+function toStagePublic(stage: StageDefinition | null, viewerPlayerId?: string | null): StagePublic | null {
+  if (!stage) {
+    return null;
+  }
+
+  if (stage.miniGameType === "dibujo" && stage.drawing) {
+    return {
+      ...stage,
+      drawing: {
+        ...stage.drawing,
+        promptForDrawer: viewerPlayerId === stage.drawing.drawerPlayerId ? stage.drawing.promptForDrawer : undefined,
+      },
+    };
+  }
+
+  return {
+    ...stage,
+  };
+}
+
 function advanceStage(room: RoomInternal) {
-  const stages = getStages(room);
-  if (room.currentStageIndex >= stages.length) {
+  if (room.currentStageIndex >= room.stageQueue.length) {
     room.phase = "finished";
     room.stage = null;
     room.finished = {
       outcome: "victory",
       headline: "Mision completada",
-      explanation: "La misión siguió hasta el final. Gana quien sumó más puntos.",
+      explanation: "La secuencia termino. Gana quien sumo mas puntos en el marcador final.",
       stageResults: buildFinalResults(room),
     };
     return;
   }
 
-  room.stage = stages[room.currentStageIndex];
+  room.stage = room.stageQueue[room.currentStageIndex];
   room.phase = "playing";
   room.finished = null;
   resetAnswers(room);
+
+  const drawerId = getDrawingDrawerId(room.stage);
+  if (drawerId) {
+    const drawer = room.players.get(drawerId);
+    if (drawer) {
+      drawer.answeredCurrentStage = true;
+      room.submissions.set(drawer.id, {
+        answer: "DIBUJANTE",
+        isCorrect: true,
+        pointsEarned: 0,
+      });
+    }
+  }
+}
+
+function startPreparedGame(room: RoomInternal) {
+  const playerIds = [...room.players.values()].map((player) => player.id);
+  room.stageQueue = buildStageQueue(room.selectedDifficulty, room.configuredMiniGames, playerIds);
+  room.currentStageIndex = 0;
+  room.finished = null;
+  for (const player of room.players.values()) {
+    player.score = 0;
+  }
+  advanceStage(room);
 }
 
 export function createRoom(playerName: string, difficulty: DifficultyLevel, socketId: string) {
@@ -196,6 +240,8 @@ export function createRoom(playerName: string, difficulty: DifficultyLevel, sock
     ]),
     phase: "lobby",
     selectedDifficulty,
+    configuredMiniGames: [...DEFAULT_PLAYLIST],
+    stageQueue: [],
     currentStageIndex: 0,
     stage: null,
     submissions: new Map(),
@@ -260,7 +306,7 @@ export function getRoom(code: string) {
   return rooms.get(code.toUpperCase()) ?? null;
 }
 
-export function toRoomState(room: RoomInternal): RoomState {
+export function toRoomState(room: RoomInternal, viewerPlayerId?: string | null): RoomState {
   return {
     code: room.code,
     phase: room.phase,
@@ -278,10 +324,12 @@ export function toRoomState(room: RoomInternal): RoomState {
     gameTitle: GAME_TITLE,
     gameSubtitle: GAME_SUBTITLE,
     selectedDifficulty: room.selectedDifficulty,
+    configuredMiniGames: room.configuredMiniGames,
     availableDifficulties: DIFFICULTY_OPTIONS,
+    availableMiniGames: MINI_GAME_CATALOG,
     currentStageNumber: room.phase === "playing" ? room.currentStageIndex + 1 : room.currentStageIndex,
-    totalStages: getStages(room).length,
-    stage: toStagePublic(room.stage),
+    totalStages: room.configuredMiniGames.length,
+    stage: toStagePublic(room.stage, viewerPlayerId),
     finished: room.finished,
     winners: computeWinners(room),
     lastActivityAt: room.lastActivityAt,
@@ -312,7 +360,7 @@ export function leaveRoom(code: string, playerId: string) {
   }
 
   if (room.phase === "playing") {
-    const connectedPlayers = [...room.players.values()].filter((player) => player.connected);
+    const connectedPlayers = getConnectedPlayers(room);
     if (connectedPlayers.length > 0 && connectedPlayers.every((player) => player.answeredCurrentStage)) {
       room.currentStageIndex += 1;
       advanceStage(room);
@@ -362,12 +410,14 @@ export function markDisconnected(socketId: string) {
   return null;
 }
 
-export function configureGame(room: RoomInternal, difficulty: DifficultyLevel) {
+export function configureGame(room: RoomInternal, difficulty: DifficultyLevel, playlist: MiniGameType[]) {
   if (!DIFFICULTY_OPTIONS.some((item) => item.id === difficulty)) {
     return { error: "Esa dificultad no existe." };
   }
 
   room.selectedDifficulty = difficulty;
+  room.configuredMiniGames = sanitizePlaylist(playlist);
+  room.stageQueue = [];
   room.phase = "lobby";
   room.currentStageIndex = 0;
   room.stage = null;
@@ -385,12 +435,7 @@ export function startGame(room: RoomInternal) {
     return { error: `Se requieren al menos ${MIN_PLAYERS} jugadores para comenzar.` };
   }
 
-  room.currentStageIndex = 0;
-  room.finished = null;
-  for (const player of room.players.values()) {
-    player.score = 0;
-  }
-  advanceStage(room);
+  startPreparedGame(room);
   room.lastActivityAt = Date.now();
   return { room };
 }
@@ -398,6 +443,7 @@ export function startGame(room: RoomInternal) {
 export function restartGame(room: RoomInternal) {
   room.phase = "lobby";
   room.currentStageIndex = 0;
+  room.stageQueue = [];
   room.stage = null;
   room.finished = null;
   room.lastActivityAt = Date.now();
@@ -414,11 +460,37 @@ export function endGame(room: RoomInternal) {
   room.finished = {
     outcome: "stopped",
     headline: "Partida finalizada",
-    explanation: "El anfitrion cerro la sesion y el marcador quedo fijado en vivo.",
+    explanation: "El anfitrion cerro la sesion y el marcador quedo fijado.",
     stageResults: buildFinalResults(room),
   };
   room.lastActivityAt = Date.now();
   resetAnswers(room);
+  return { room };
+}
+
+export function addDrawingStroke(room: RoomInternal, playerId: string, stroke: DrawingStroke) {
+  if (room.phase !== "playing" || !room.stage || room.stage.miniGameType !== "dibujo" || !room.stage.drawing) {
+    return { error: "No hay un lienzo activo." };
+  }
+  if (room.stage.drawing.drawerPlayerId !== playerId) {
+    return { error: "Solo el dibujante puede usar el lienzo." };
+  }
+
+  room.stage.drawing.strokes.push(stroke);
+  room.lastActivityAt = Date.now();
+  return { room };
+}
+
+export function clearDrawing(room: RoomInternal, playerId: string) {
+  if (room.phase !== "playing" || !room.stage || room.stage.miniGameType !== "dibujo" || !room.stage.drawing) {
+    return { error: "No hay un lienzo activo." };
+  }
+  if (room.stage.drawing.drawerPlayerId !== playerId) {
+    return { error: "Solo el dibujante puede limpiar el lienzo." };
+  }
+
+  room.stage.drawing.strokes = [];
+  room.lastActivityAt = Date.now();
   return { room };
 }
 
@@ -431,6 +503,12 @@ export function submitAnswer(room: RoomInternal, playerId: string, rawAnswer: st
   if (!player) {
     return { error: "Jugador no encontrado en la sala." };
   }
+
+  const drawerId = getDrawingDrawerId(room.stage);
+  if (drawerId === playerId) {
+    return { error: "El dibujante no responde esta ronda." };
+  }
+
   if (player.answeredCurrentStage) {
     return { error: "Ya enviaste una respuesta en esta etapa." };
   }
@@ -438,7 +516,7 @@ export function submitAnswer(room: RoomInternal, playerId: string, rawAnswer: st
   const normalizedAnswer = normalizeText(rawAnswer);
   const expectedAnswer = normalizeText(room.stage.answer);
   const isCorrect = normalizedAnswer === expectedAnswer;
-  const pointsEarned = isCorrect ? getStagePoints(room) : 0;
+  const pointsEarned = isCorrect ? getStagePoints(room, room.stage) : 0;
 
   player.answeredCurrentStage = true;
   if (isCorrect) {
@@ -451,8 +529,25 @@ export function submitAnswer(room: RoomInternal, playerId: string, rawAnswer: st
   });
   room.lastActivityAt = Date.now();
 
-  const connectedPlayers = [...room.players.values()].filter((candidate) => candidate.connected);
+  const connectedPlayers = getConnectedPlayers(room);
   if (connectedPlayers.length > 0 && connectedPlayers.every((candidate) => candidate.answeredCurrentStage)) {
+    if (drawerId) {
+      const drawer = room.players.get(drawerId);
+      const anyCorrectGuess = [...room.submissions.entries()].some(
+        ([submissionPlayerId, submission]) => submissionPlayerId !== drawerId && submission.isCorrect,
+      );
+
+      if (drawer && anyCorrectGuess) {
+        const drawerPoints = Math.floor(getStagePoints(room, room.stage) * 0.6);
+        drawer.score += drawerPoints;
+        room.submissions.set(drawer.id, {
+          answer: "DIBUJO ENTREGADO",
+          isCorrect: true,
+          pointsEarned: drawerPoints,
+        });
+      }
+    }
+
     room.currentStageIndex += 1;
     advanceStage(room);
   }

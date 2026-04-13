@@ -1,89 +1,268 @@
-import { FormEvent, useEffect, useState } from "react";
-import { PlayerPublic, RoomState, StagePublic } from "@shared/game";
+import { PointerEvent, useEffect, useMemo, useRef, useState } from "react";
+import { DrawingStroke, PlayerPublic, RoomState, StagePublic } from "@shared/game";
 
 interface RoundScreenProps {
   room: RoomState;
   me?: PlayerPublic;
   onSubmit: (answer: string) => void;
   onEnd: () => void;
+  onDrawingStroke: (stroke: DrawingStroke) => void;
+  onClearDrawing: () => void;
 }
 
-function getModeCopy(stage: StagePublic) {
-  switch (stage.mode) {
-    case "memory":
-      return { eyebrow: "Memoria flash", tone: "Mira, guarda y repite." };
-    case "route":
-      return { eyebrow: "Ruta secreta", tone: "Construye el camino sin romper la jugada." };
-    case "signal":
-      return { eyebrow: "Pulso rapido", tone: "Lee la escena y marca la jugada mas fuerte." };
-    case "radar":
-    default:
-      return { eyebrow: "Radar tactico", tone: "Escanea la amenaza y bloquea tu eleccion." };
+type CellPoint = [number, number];
+
+function drawStrokes(canvas: HTMLCanvasElement, strokes: DrawingStroke[]) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return;
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "#0b1220";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (const stroke of strokes) {
+    if (stroke.points.length < 2) {
+      continue;
+    }
+    ctx.beginPath();
+    ctx.strokeStyle = stroke.color;
+    ctx.lineWidth = stroke.size;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+    for (const point of stroke.points.slice(1)) {
+      ctx.lineTo(point.x, point.y);
+    }
+    ctx.stroke();
   }
 }
 
-export function RoundScreen({ room, me, onSubmit, onEnd }: RoundScreenProps) {
+function getMiniGameLabel(stage: StagePublic) {
+  switch (stage.miniGameType) {
+    case "crucigrama":
+      return "Crucigrama";
+    case "sopa":
+      return "Sopa de letras";
+    case "dibujo":
+      return "Dibujo en vivo";
+    case "memorama":
+    default:
+      return "Memorama";
+  }
+}
+
+export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClearDrawing }: RoundScreenProps) {
   const stage = room.stage;
-  const [answer, setAnswer] = useState("");
-  const [memoryVisible, setMemoryVisible] = useState(true);
-  const [sequenceSteps, setSequenceSteps] = useState<string[]>([]);
-  const submittedAlready = Boolean(me?.answeredCurrentStage);
-  const sequenceOptions = stage?.options ?? stage?.memorySequence ?? [];
+  const [crosswordLetters, setCrosswordLetters] = useState<string[]>([]);
+  const [selectedCrosswordCell, setSelectedCrosswordCell] = useState<number>(0);
+  const [selectedWordCells, setSelectedWordCells] = useState<CellPoint[]>([]);
+  const [foundWords, setFoundWords] = useState<string[]>([]);
+  const [drawingAnswer, setDrawingAnswer] = useState("");
+  const [memoryFlipped, setMemoryFlipped] = useState<string[]>([]);
+  const [memoryMatched, setMemoryMatched] = useState<string[]>([]);
+  const [drawingColor, setDrawingColor] = useState("#f8fafc");
+  const [drawingSize, setDrawingSize] = useState(8);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawingPointsRef = useRef<Array<{ x: number; y: number }>>([]);
+  const isPointerDownRef = useRef(false);
 
   useEffect(() => {
-    setAnswer("");
-    setSequenceSteps([]);
-  }, [room.currentStageNumber, room.phase, room.selectedDifficulty]);
-
-  useEffect(() => {
-    if (!stage?.memorySequence || !stage.memoryRevealMs) {
-      setMemoryVisible(true);
+    if (!stage) {
       return;
     }
 
-    setMemoryVisible(true);
-    const timeout = window.setTimeout(() => setMemoryVisible(false), stage.memoryRevealMs);
-    return () => window.clearTimeout(timeout);
-  }, [stage]);
+    setSelectedWordCells([]);
+    setFoundWords([]);
+    setDrawingAnswer("");
+    setMemoryFlipped([]);
+    setMemoryMatched([]);
+    setSelectedCrosswordCell(0);
+
+    if (stage.crossword) {
+      setCrosswordLetters(Array(stage.crossword.slots.length).fill(""));
+    } else {
+      setCrosswordLetters([]);
+    }
+  }, [stage?.id]);
+
+  useEffect(() => {
+    if (!stage?.drawing || !canvasRef.current) {
+      return;
+    }
+    drawStrokes(canvasRef.current, stage.drawing.strokes);
+  }, [stage?.drawing]);
 
   if (!stage) {
     return null;
   }
 
-  const currentAnswer = stage.answerKind === "sequence" ? sequenceSteps.join(", ") : answer;
-  const modeCopy = getModeCopy(stage);
+  const submittedAlready = Boolean(me?.answeredCurrentStage);
+  const isDrawer = stage.miniGameType === "dibujo" && stage.drawing?.drawerPlayerId === me?.id;
+  const wordSearchSelection = useMemo(() => {
+    if (!stage.wordSearch) {
+      return "";
+    }
+    return selectedWordCells.map(([row, col]) => stage.wordSearch?.grid[row][col] ?? "").join("");
+  }, [selectedWordCells, stage.wordSearch]);
 
-  const handleSubmit = (event: FormEvent) => {
-    event.preventDefault();
-    if (!currentAnswer.trim() || submittedAlready) {
+  const memoryAnswer = useMemo(() => [...memoryMatched].sort().join("|"), [memoryMatched]);
+
+  const crosswordAnswer = useMemo(() => crosswordLetters.join(""), [crosswordLetters]);
+  const sopaAnswer = useMemo(() => [...foundWords].sort().join("|"), [foundWords]);
+
+  const handleCrosswordLetter = (letter: string) => {
+    setCrosswordLetters((current) => {
+      const next = [...current];
+      next[selectedCrosswordCell] = letter;
+      return next;
+    });
+    setSelectedCrosswordCell((current) =>
+      stage.crossword ? Math.min(current + 1, stage.crossword.slots.length - 1) : current,
+    );
+  };
+
+  const clearCrosswordCell = () => {
+    setCrosswordLetters((current) => {
+      const next = [...current];
+      next[selectedCrosswordCell] = "";
+      return next;
+    });
+  };
+
+  const toggleWordSearchCell = (cell: CellPoint) => {
+    setSelectedWordCells((current) => {
+      const exists = current.some(([row, col]) => row === cell[0] && col === cell[1]);
+      if (exists) {
+        return current.filter(([row, col]) => row !== cell[0] || col !== cell[1]);
+      }
+      return [...current, cell];
+    });
+  };
+
+  const lockFoundWord = () => {
+    const normalized = wordSearchSelection.toUpperCase();
+    if (!stage.wordSearch) {
       return;
     }
-    onSubmit(currentAnswer);
+    if (stage.wordSearch.words.some((word) => word.toUpperCase() === normalized) && !foundWords.includes(normalized)) {
+      setFoundWords((current) => [...current, normalized]);
+      setSelectedWordCells([]);
+    }
   };
 
-  const addStep = (step: string) => {
-    if (submittedAlready) {
+  const handleMemoryFlip = (cardId: string) => {
+    if (!stage.memory || memoryFlipped.includes(cardId) || submittedAlready) {
       return;
     }
-    setSequenceSteps((current) => [...current, step]);
+
+    const nextFlipped = [...memoryFlipped, cardId];
+    setMemoryFlipped(nextFlipped);
+
+    if (nextFlipped.length < 2) {
+      return;
+    }
+
+    const [firstId, secondId] = nextFlipped;
+    const firstCard = stage.memory.cards.find((card) => card.id === firstId);
+    const secondCard = stage.memory.cards.find((card) => card.id === secondId);
+
+    if (firstCard && secondCard && firstCard.pairId === secondCard.pairId) {
+      if (!memoryMatched.includes(firstCard.pairId)) {
+        setMemoryMatched((current) => [...current, firstCard.pairId]);
+      }
+      window.setTimeout(() => setMemoryFlipped([]), 250);
+      return;
+    }
+
+    window.setTimeout(() => setMemoryFlipped([]), 600);
   };
 
-  const clearSequence = () => {
-    setSequenceSteps([]);
+  const submitCurrentStage = () => {
+    if (submittedAlready || isDrawer) {
+      return;
+    }
+
+    switch (stage.miniGameType) {
+      case "crucigrama":
+        if (!crosswordLetters.every(Boolean)) {
+          return;
+        }
+        onSubmit(crosswordAnswer);
+        break;
+      case "sopa":
+        if (!stage.wordSearch || foundWords.length !== stage.wordSearch.words.length) {
+          return;
+        }
+        onSubmit(sopaAnswer);
+        break;
+      case "dibujo":
+        if (!drawingAnswer) {
+          return;
+        }
+        onSubmit(drawingAnswer);
+        break;
+      case "memorama":
+        if (!stage.memory || memoryMatched.length !== stage.memory.cards.length / 2) {
+          return;
+        }
+        onSubmit(memoryAnswer);
+        break;
+    }
   };
 
-  const removeLastStep = () => {
-    setSequenceSteps((current) => current.slice(0, -1));
+  const currentSelectionReady =
+    (stage.miniGameType === "crucigrama" && crosswordLetters.every(Boolean)) ||
+    (stage.miniGameType === "sopa" && stage.wordSearch && foundWords.length === stage.wordSearch.words.length) ||
+    (stage.miniGameType === "dibujo" && Boolean(drawingAnswer)) ||
+    (stage.miniGameType === "memorama" && stage.memory && memoryMatched.length === stage.memory.cards.length / 2);
+
+  const handlePointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawer || !canvasRef.current) {
+      return;
+    }
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    isPointerDownRef.current = true;
+    drawingPointsRef.current = [{ x: event.clientX - rect.left, y: event.clientY - rect.top }];
   };
 
-  const isSequence = stage.answerKind === "sequence";
+  const handlePointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawer || !canvasRef.current || !isPointerDownRef.current) {
+      return;
+    }
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    drawingPointsRef.current = [...drawingPointsRef.current, { x: event.clientX - rect.left, y: event.clientY - rect.top }];
+    drawStrokes(canvasRef.current, [
+      ...(stage.drawing?.strokes ?? []),
+      { color: drawingColor, size: drawingSize, points: drawingPointsRef.current },
+    ]);
+  };
+
+  const commitStroke = () => {
+    if (!isDrawer || drawingPointsRef.current.length < 2) {
+      isPointerDownRef.current = false;
+      drawingPointsRef.current = [];
+      return;
+    }
+
+    onDrawingStroke({
+      color: drawingColor,
+      size: drawingSize,
+      points: drawingPointsRef.current,
+    });
+    isPointerDownRef.current = false;
+    drawingPointsRef.current = [];
+  };
 
   return (
     <section className="panel-strong overflow-hidden p-5 md:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.45em] text-gold/75">
-            Etapa {room.currentStageNumber} de {room.totalStages}
+            Ronda {room.currentStageNumber} de {room.totalStages}
           </p>
           <h2 className="mt-3 font-display text-4xl text-parchment md:text-5xl">{stage.title}</h2>
           <p className="mt-3 max-w-2xl text-base leading-7 text-mist/85 md:text-lg">{stage.prompt}</p>
@@ -91,103 +270,261 @@ export function RoundScreen({ room, me, onSubmit, onEnd }: RoundScreenProps) {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-gold/25 bg-gold/10 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.2em] text-gold/75">Modo</p>
-            <p className="mt-1 text-lg font-semibold text-parchment">{modeCopy.eyebrow}</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-gold/75">Minijuego</p>
+            <p className="mt-1 text-lg font-semibold text-parchment">{getMiniGameLabel(stage)}</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-            <p className="text-xs uppercase tracking-[0.2em] text-mist/60">Nivel</p>
-            <p className="mt-1 text-lg font-semibold capitalize text-parchment">{room.selectedDifficulty}</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-mist/60">Puntaje</p>
+            <p className="mt-1 text-lg font-semibold text-parchment">{stage.pointsLabel}</p>
           </div>
         </div>
       </div>
 
+      <div className="mt-6 flex gap-2">
+        {Array.from({ length: room.totalStages }).map((_, index) => (
+          <div key={index} className={`h-2 flex-1 rounded-full ${index < room.currentStageNumber ? "bg-gold" : "bg-white/10"}`} />
+        ))}
+      </div>
+
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="rounded-[2rem] border border-white/10 bg-white/5 p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-mist/55">{modeCopy.eyebrow}</p>
-              <p className="mt-2 text-sm text-mist/70">{modeCopy.tone}</p>
+          <p className="text-xs uppercase tracking-[0.35em] text-mist/55">Instrucciones</p>
+          <p className="mt-3 text-sm leading-7 text-mist/80">{stage.instructions}</p>
+
+          {stage.miniGameType === "crucigrama" && stage.crossword ? (
+            <div className="mt-6">
+              {(() => {
+                const crossword = stage.crossword!;
+                return (
+                  <>
+              <div className="rounded-[1.75rem] border border-gold/20 bg-gold/10 p-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-gold/70">Pista</p>
+                <p className="mt-2 text-base text-parchment">{crossword.clue}</p>
+              </div>
+
+              <div className="mt-4 grid gap-2" style={{ gridTemplateColumns: `repeat(${crossword.size}, minmax(0, 1fr))` }}>
+                {Array.from({ length: crossword.size * crossword.size }).map((_, index) => {
+                  const row = Math.floor(index / crossword.size);
+                  const col = index % crossword.size;
+                  const slotIndex = crossword.slots.findIndex(([slotRow, slotCol]) => slotRow === row && slotCol === col);
+                  const isBlocked = crossword.blocks.some(([blockRow, blockCol]) => blockRow === row && blockCol === col);
+
+                  if (isBlocked) {
+                    return <div key={index} className="aspect-square rounded-2xl bg-black/30" />;
+                  }
+
+                  const active = slotIndex === selectedCrosswordCell;
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setSelectedCrosswordCell(slotIndex)}
+                      className={`aspect-square rounded-2xl border text-xl font-semibold transition ${
+                        active ? "border-gold bg-gold/15 text-parchment" : "border-white/10 bg-slate-950/60 text-mist/85"
+                      }`}
+                    >
+                      {crosswordLetters[slotIndex] || ""}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {crossword.letterBank.map((letter, index) => (
+                  <button
+                    key={`${letter}-${index}`}
+                    type="button"
+                    onClick={() => handleCrosswordLetter(letter)}
+                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-parchment transition hover:bg-white/10"
+                  >
+                    {letter}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={clearCrosswordCell}
+                  className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-mist/80"
+                >
+                  Borrar
+                </button>
+              </div>
+                  </>
+                );
+              })()}
             </div>
-            <div className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-xs uppercase tracking-[0.25em] text-gold/75">
-              {stage.inputLabel}
-            </div>
-          </div>
+          ) : null}
 
-          <div className="mt-5 flex gap-2">
-            {Array.from({ length: room.totalStages }).map((_, index) => (
-              <div key={index} className={`h-2 flex-1 rounded-full ${index < room.currentStageNumber ? "bg-gold" : "bg-white/10"}`} />
-            ))}
-          </div>
-
-          <div className="mt-6 rounded-[1.75rem] border border-white/10 bg-slate-950/55 p-5">
-            <p className="text-sm text-mist/75">{stage.hint}</p>
-
-            {stage.memorySequence ? (
-              <div className="mt-4 rounded-[1.5rem] border border-gold/20 bg-gold/10 p-4">
-                <p className="text-xs uppercase tracking-[0.25em] text-gold/70">Ventana de memoria</p>
-                {memoryVisible ? (
-                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {stage.memorySequence.map((item, index) => (
-                      <div
-                        key={`${item}-${index}`}
-                        className="rounded-2xl border border-white/10 bg-slate-900/80 px-4 py-4 text-center font-semibold text-parchment"
+          {stage.miniGameType === "sopa" && stage.wordSearch ? (
+            <div className="mt-6">
+              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${stage.wordSearch.grid[0].length}, minmax(0, 1fr))` }}>
+                {stage.wordSearch.grid.map((row, rowIndex) =>
+                  row.map((letter, colIndex) => {
+                    const selected = selectedWordCells.some(([selectedRow, selectedCol]) => selectedRow === rowIndex && selectedCol === colIndex);
+                    return (
+                      <button
+                        key={`${rowIndex}-${colIndex}`}
+                        type="button"
+                        onClick={() => toggleWordSearchCell([rowIndex, colIndex])}
+                        className={`aspect-square rounded-2xl border text-sm font-semibold transition sm:text-lg ${
+                          selected ? "border-cyan-300 bg-cyan-300/15 text-parchment" : "border-white/10 bg-slate-950/60 text-mist/85"
+                        }`}
                       >
-                        {item}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-4 text-sm text-mist/80">La memoria se cerró. Ahora ejecútala.</p>
+                        {letter}
+                      </button>
+                    );
+                  }),
                 )}
               </div>
-            ) : null}
 
-            {isSequence ? (
-              <div className="mt-5 rounded-[1.5rem] border border-cyan-200/10 bg-cyan-300/5 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/70">Combo actual</p>
-                  <div className="flex gap-2">
+              <div className="mt-4 rounded-[1.5rem] border border-cyan-200/10 bg-cyan-300/5 p-4">
+                <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/70">Seleccion actual</p>
+                <p className="mt-2 text-xl tracking-[0.3em] text-parchment">{wordSearchSelection || "..."}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={lockFoundWord}
+                    className="rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950"
+                  >
+                    Marcar palabra
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedWordCells([])}
+                    className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-mist/80"
+                  >
+                    Limpiar
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {stage.wordSearch.words.map((word) => {
+                  const found = foundWords.includes(word.toUpperCase());
+                  return (
+                    <div
+                      key={word}
+                      className={`rounded-2xl border px-4 py-3 ${found ? "border-emerald-300/30 bg-emerald-400/10" : "border-white/10 bg-white/5"}`}
+                    >
+                      <p className="font-semibold text-parchment">{word}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {stage.miniGameType === "dibujo" && stage.drawing ? (
+            <div className="mt-6">
+              <canvas
+                ref={canvasRef}
+                width={720}
+                height={420}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={commitStroke}
+                onPointerLeave={commitStroke}
+                className={`w-full rounded-[1.75rem] border border-white/10 bg-slate-950 ${isDrawer ? "cursor-crosshair" : "cursor-default"}`}
+              />
+
+              {isDrawer ? (
+                <div className="mt-4 rounded-[1.5rem] border border-gold/20 bg-gold/10 p-4">
+                  <p className="text-xs uppercase tracking-[0.25em] text-gold/70">Tu palabra</p>
+                  <p className="mt-2 font-display text-3xl text-parchment">{stage.drawing.promptForDrawer}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {stage.drawing.brushPalette.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setDrawingColor(color)}
+                        className={`h-10 w-10 rounded-full border ${drawingColor === color ? "border-gold" : "border-white/10"}`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
                     <button
                       type="button"
-                      onClick={removeLastStep}
-                      className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-mist/85"
+                      onClick={() => setDrawingSize((current) => Math.max(4, current - 2))}
+                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-mist/80"
                     >
-                      Atras
+                      Pincel -
                     </button>
                     <button
                       type="button"
-                      onClick={clearSequence}
-                      className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-mist/85"
+                      onClick={() => setDrawingSize((current) => Math.min(16, current + 2))}
+                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-mist/80"
                     >
-                      Limpiar
+                      Pincel +
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onClearDrawing}
+                      className="rounded-xl border border-rose-300/30 bg-rose-500/10 px-4 py-2 text-sm text-rose-100"
+                    >
+                      Limpiar lienzo
                     </button>
                   </div>
                 </div>
+              ) : (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {stage.drawing.options.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setDrawingAnswer(option)}
+                      className={`rounded-[1.5rem] border px-4 py-4 text-left transition ${
+                        drawingAnswer === option
+                          ? "border-gold/60 bg-gold/15 text-parchment"
+                          : "border-white/10 bg-white/5 text-mist/85 hover:bg-white/10"
+                      }`}
+                    >
+                      <p className="text-base font-semibold">{option}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : null}
 
-                {sequenceSteps.length > 0 ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {sequenceSteps.map((step, index) => (
-                      <div
-                        key={`${step}-${index}`}
-                        className="rounded-full border border-white/10 bg-slate-900/80 px-3 py-2 text-sm font-semibold text-parchment"
-                      >
-                        {index + 1}. {step}
+          {stage.miniGameType === "memorama" && stage.memory ? (
+            <div className="mt-6 grid grid-cols-4 gap-3">
+              {stage.memory.cards.map((card) => {
+                const opened = memoryFlipped.includes(card.id) || memoryMatched.includes(card.pairId);
+                return (
+                  <button
+                    key={card.id}
+                    type="button"
+                    onClick={() => handleMemoryFlip(card.id)}
+                    className={`aspect-[0.8] rounded-[1.5rem] border p-3 text-center transition ${
+                      opened
+                        ? `border-white/10 bg-gradient-to-br ${card.tint}`
+                        : "border-white/10 bg-slate-950/70 hover:bg-slate-900"
+                    }`}
+                  >
+                    {opened ? (
+                      <div className="flex h-full flex-col items-center justify-center">
+                        <div className="text-4xl">{card.icon}</div>
+                        <p className="mt-2 text-xs uppercase tracking-[0.2em] text-parchment/80">{card.label}</p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                <p className="mt-4 text-sm text-mist/70">Pulsa las piezas en orden para armar la jugada.</p>
-                )}
-              </div>
-            ) : null}
-          </div>
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.25em] text-gold/80">
+                          ?
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
         </div>
 
-        <form onSubmit={handleSubmit} className="rounded-[2rem] border border-white/10 bg-black/20 p-5">
+        <div className="rounded-[2rem] border border-white/10 bg-black/20 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.35em] text-mist/50">Cabina</p>
-              <p className="mt-2 text-sm text-mist/75">{submittedAlready ? "Jugada enviada" : "Tu turno sigue abierto"}</p>
+              <p className="mt-2 text-sm text-mist/75">
+                {submittedAlready ? "Tu jugada ya quedo enviada." : isDrawer ? "Estas dibujando para tu equipo." : "Aun puedes jugar esta ronda."}
+              </p>
             </div>
             {me?.isHost ? (
               <button
@@ -200,51 +537,33 @@ export function RoundScreen({ room, me, onSubmit, onEnd }: RoundScreenProps) {
             ) : null}
           </div>
 
-          {stage.answerKind === "single-choice" ? (
-            <div className="mt-6 grid gap-3">
-              {stage.options?.map((option) => {
-                const active = answer === option;
-                return (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => setAnswer(option)}
-                    className={`rounded-[1.5rem] border px-4 py-5 text-left transition ${
-                      active
-                        ? "border-gold/60 bg-gold/15 text-parchment shadow-glow"
-                        : "border-white/10 bg-white/5 text-mist/85 hover:border-gold/30 hover:bg-white/10"
-                    }`}
-                  >
-                    <p className="text-base font-semibold">{option}</p>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {sequenceOptions.map((option, index) => (
-                <button
-                  key={`${option}-${index}`}
-                  type="button"
-                  onClick={() => addStep(option)}
-                  className="rounded-[1.5rem] border border-white/10 bg-white/5 px-4 py-5 text-left font-semibold text-mist/85 transition hover:border-gold/30 hover:bg-white/10"
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <button
-              disabled={submittedAlready || !currentAnswer.trim()}
-              className="rounded-2xl bg-gold px-6 py-3 font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-slate-500"
-            >
-              Bloquear jugada
-            </button>
-            <p className="text-sm text-mist/70">Cada ronda puede subir tu puesto.</p>
+          <div className="mt-6 rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+            <p className="text-xs uppercase tracking-[0.25em] text-mist/55">Objetivo</p>
+            <p className="mt-2 text-base leading-7 text-parchment">{stage.pointsLabel}</p>
           </div>
-        </form>
+
+          <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+            <p className="text-xs uppercase tracking-[0.25em] text-mist/55">Estado</p>
+            <p className="mt-2 text-sm leading-7 text-mist/80">
+              {stage.miniGameType === "crucigrama" ? `${crosswordLetters.filter(Boolean).length}/${stage.crossword?.slots.length ?? 0} letras colocadas` : null}
+              {stage.miniGameType === "sopa" ? `${foundWords.length}/${stage.wordSearch?.words.length ?? 0} palabras encontradas` : null}
+              {stage.miniGameType === "dibujo" && isDrawer ? "El lienzo esta abierto para ti." : null}
+              {stage.miniGameType === "dibujo" && !isDrawer ? "Mira el dibujo y marca una opcion." : null}
+              {stage.miniGameType === "memorama" ? `${memoryMatched.length}/${(stage.memory?.cards.length ?? 0) / 2} parejas completas` : null}
+            </p>
+          </div>
+
+          {!isDrawer ? (
+            <button
+              type="button"
+              disabled={submittedAlready || !currentSelectionReady}
+              onClick={submitCurrentStage}
+              className="mt-6 w-full rounded-2xl bg-gold px-6 py-3 font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-slate-500"
+            >
+              Enviar jugada
+            </button>
+          ) : null}
+        </div>
       </div>
     </section>
   );

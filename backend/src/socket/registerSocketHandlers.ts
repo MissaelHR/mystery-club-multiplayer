@@ -6,6 +6,8 @@ import {
   ServerToClientEvents,
 } from "../../../shared/game";
 import {
+  addDrawingStroke,
+  clearDrawing,
   configureGame,
   createRoom,
   endGame,
@@ -39,7 +41,16 @@ function emitRoom(io: MysteryServer, roomCode: string) {
   if (!room) {
     return;
   }
-  io.to(roomCode).emit("room:update", toRoomState(room));
+
+  const members = io.sockets.adapter.rooms.get(roomCode);
+  if (!members) {
+    return;
+  }
+
+  for (const socketId of members) {
+    const viewerPlayerId = findPlayerIdBySocket(roomCode, socketId);
+    io.to(socketId).emit("room:update", toRoomState(room, viewerPlayerId));
+  }
 }
 
 function emitError(socket: MysterySocket, message: string) {
@@ -147,7 +158,7 @@ export function registerSocketHandlers(io: MysteryServer) {
       }
     });
 
-    socket.on("game:configure", ({ roomCode, difficulty }) => {
+    socket.on("game:configure", ({ roomCode, difficulty, playlist }) => {
       const room = getRoom(roomCode);
       if (!room) {
         emitError(socket, "Sala no encontrada.");
@@ -155,11 +166,11 @@ export function registerSocketHandlers(io: MysteryServer) {
       }
 
       if (room.hostId !== findPlayerIdBySocket(roomCode, socket.id)) {
-        emitError(socket, "Solo el anfitrión puede elegir la dificultad.");
+        emitError(socket, "Solo el anfitrión puede configurar la misión.");
         return;
       }
 
-      const result = configureGame(room, difficulty);
+      const result = configureGame(room, difficulty, playlist);
       if ("error" in result && result.error) {
         emitError(socket, result.error);
         return;
@@ -237,6 +248,46 @@ export function registerSocketHandlers(io: MysteryServer) {
       const result = submitAnswer(room, playerId, answer);
       if ("error" in result && result.error) {
         emitError(socket, result.error);
+      }
+      emitRoom(io, room.code);
+    });
+
+    socket.on("drawing:stroke", ({ roomCode, stroke }) => {
+      const room = getRoom(roomCode);
+      if (!room) {
+        emitError(socket, "Sala no encontrada.");
+        return;
+      }
+      const playerId = findPlayerIdBySocket(roomCode, socket.id);
+      if (!playerId) {
+        emitError(socket, "Jugador no encontrado en la sala.");
+        return;
+      }
+
+      const result = addDrawingStroke(room, playerId, stroke);
+      if ("error" in result && result.error) {
+        emitError(socket, result.error);
+        return;
+      }
+      emitRoom(io, room.code);
+    });
+
+    socket.on("drawing:clear", ({ roomCode }) => {
+      const room = getRoom(roomCode);
+      if (!room) {
+        emitError(socket, "Sala no encontrada.");
+        return;
+      }
+      const playerId = findPlayerIdBySocket(roomCode, socket.id);
+      if (!playerId) {
+        emitError(socket, "Jugador no encontrado en la sala.");
+        return;
+      }
+
+      const result = clearDrawing(room, playerId);
+      if ("error" in result && result.error) {
+        emitError(socket, result.error);
+        return;
       }
       emitRoom(io, room.code);
     });

@@ -1,249 +1,238 @@
-import { DifficultyLevel, StageDefinition } from "../../../shared/game";
+import {
+  DifficultyLevel,
+  DrawingStroke,
+  MemoryCard,
+  MiniGameType,
+  StageDefinition,
+} from "../../../shared/game";
 
-type DifficultyStageMap = Record<DifficultyLevel, StageDefinition[]>;
+const brushPalette = ["#f8fafc", "#f59e0b", "#22d3ee", "#34d399", "#fb7185"];
 
-export const stagesByDifficulty: DifficultyStageMap = {
+const crosswordByDifficulty = {
+  explorador: {
+    answer: "LINTERNA",
+    clue: "Objeto que ilumina los pasillos del misterio.",
+    size: 8,
+    row: 3,
+    startCol: 0,
+    bank: ["L", "I", "N", "T", "E", "R", "N", "A", "M", "P", "O", "S"],
+  },
+  agente: {
+    answer: "BRUJULA",
+    clue: "Sirve para no perder la ruta cuando todo gira.",
+    size: 8,
+    row: 2,
+    startCol: 0,
+    bank: ["B", "R", "U", "J", "U", "L", "A", "C", "L", "A", "V", "E"],
+  },
+  leyenda: {
+    answer: "LABERINTO",
+    clue: "Lugar lleno de giros donde la salida nunca parece cerca.",
+    size: 10,
+    row: 4,
+    startCol: 0,
+    bank: ["L", "A", "B", "E", "R", "I", "N", "T", "O", "S", "M", "A", "P"],
+  },
+} satisfies Record<DifficultyLevel, { answer: string; clue: string; size: number; row: number; startCol: number; bank: string[] }>;
+
+const wordSearchByDifficulty = {
+  explorador: {
+    grid: [
+      ["M", "A", "P", "A", "X", "R"],
+      ["T", "O", "R", "R", "E", "L"],
+      ["C", "L", "A", "V", "E", "A"],
+      ["P", "I", "S", "T", "A", "S"],
+      ["L", "U", "Z", "N", "O", "R"],
+      ["R", "U", "T", "A", "O", "K"],
+    ],
+    words: ["MAPA", "TORRE", "CLAVE"],
+  },
+  agente: {
+    grid: [
+      ["B", "A", "L", "C", "O", "N", "X"],
+      ["M", "I", "S", "I", "O", "N", "L"],
+      ["C", "O", "D", "I", "G", "O", "A"],
+      ["L", "I", "N", "T", "E", "R", "N"],
+      ["P", "I", "S", "T", "A", "S", "D"],
+      ["R", "U", "T", "A", "S", "O", "O"],
+      ["E", "S", "C", "A", "L", "A", "R"],
+    ],
+    words: ["CODIGO", "MISION", "RUTA", "LINTERNA"],
+  },
+  leyenda: {
+    grid: [
+      ["S", "E", "C", "R", "E", "T", "O", "X"],
+      ["B", "R", "U", "J", "U", "L", "A", "M"],
+      ["L", "A", "B", "E", "R", "I", "N", "T"],
+      ["A", "C", "E", "R", "T", "I", "J", "O"],
+      ["P", "A", "S", "A", "D", "I", "Z", "O"],
+      ["T", "E", "R", "R", "A", "Z", "A", "S"],
+      ["M", "A", "P", "A", "S", "O", "M", "B"],
+      ["R", "U", "T", "A", "F", "I", "N", "A"],
+    ],
+    words: ["BRUJULA", "LABERINTO", "ACERTIJO", "PASADIZO"],
+  },
+} satisfies Record<DifficultyLevel, { grid: string[][]; words: string[] }>;
+
+const drawingByDifficulty = {
+  explorador: {
+    prompt: "Linterna",
+    options: ["Linterna", "Brújula", "Mochila", "Llave"],
+  },
+  agente: {
+    prompt: "Brújula",
+    options: ["Reloj", "Brújula", "Candado", "Ventana"],
+  },
+  leyenda: {
+    prompt: "Mapa",
+    options: ["Mapa", "Escalera", "Maleta", "Campana"],
+  },
+} satisfies Record<DifficultyLevel, { prompt: string; options: string[] }>;
+
+const memoryByDifficulty = {
   explorador: [
-    {
-      id: "e1",
-      title: "Radar rojo",
-      prompt: "Escanea la fachada y marca la alerta real.",
-      inputLabel: "Activa una alerta",
-      mode: "radar",
-      hint: "Busca el peligro que corta el ritmo de Amanda.",
-      answerKind: "single-choice",
-      options: ["Sus dedos resbalan", "Se rompe la terraza", "Se apagan las luces", "Llega un guardia"],
-      answer: "SUS DEDOS RESBALAN",
-      explanation: "La amenaza inmediata es perder el agarre.",
-    },
-    {
-      id: "e2",
-      title: "Eco de memoria",
-      prompt: "Mira la cadena del rescate y reprodúcela antes de que se apague.",
-      inputLabel: "Repite la cadena",
-      mode: "memory",
-      hint: "Obsérvala, espera y reconstruye el orden.",
-      answerKind: "sequence",
-      options: ["Resbala", "Dron", "Apoyo", "Sigue"],
-      memorySequence: ["Resbala", "Dron", "Apoyo", "Sigue"],
-      memoryRevealMs: 4500,
-      answer: "RESBALA, DRON, APOYO, SIGUE",
-      explanation: "Así se recompone el rescate de Benson.",
-    },
-    {
-      id: "e3",
-      title: "Ruta sombra",
-      prompt: "El guardia gira la cabeza. Elige el escondite que mantiene viva la misión.",
-      inputLabel: "Marca la cobertura",
-      mode: "route",
-      hint: "Solo un punto de la terraza la cubre de verdad.",
-      answerKind: "single-choice",
-      options: ["Jardineras", "Mesa de cristal", "Ventana", "Barandilla"],
-      answer: "JARDINERAS",
-      explanation: "Las jardineras son la única cobertura real.",
-    },
-    {
-      id: "e4",
-      title: "Ruta turbo",
-      prompt: "Traza la línea exacta para entrar al despacho sin perder velocidad.",
-      inputLabel: "Traza la ruta",
-      mode: "route",
-      hint: "Une los movimientos de Eric en una sola corrida.",
-      answerKind: "sequence",
-      options: ["Izquierda", "Sube", "Terraza", "Escóndete"],
-      answer: "IZQUIERDA, SUBE, TERRAZA, ESCONDETE",
-      explanation: "Esa es la ruta limpia marcada por Eric.",
-    },
+    ["astro", "🌙", "Luna", "from-indigo-400/40 to-sky-400/10"],
+    ["llave", "🗝️", "Llave", "from-amber-300/40 to-gold/10"],
+    ["mapa", "🗺️", "Mapa", "from-emerald-300/40 to-teal-400/10"],
+    ["lupa", "🔎", "Lupa", "from-cyan-300/40 to-blue-400/10"],
   ],
   agente: [
-    {
-      id: "a1",
-      title: "Pulso firme",
-      prompt: "La torre vibra. Activa la decisión que mantiene el control.",
-      inputLabel: "Pulsa la mejor jugada",
-      mode: "signal",
-      hint: "La mente fría puntúa más que el impulso.",
-      answerKind: "single-choice",
-      options: ["Pensar con frialdad", "Saltar sin mirar", "Esperar quieta", "Romper el cristal"],
-      answer: "PENSAR CON FRIALDAD",
-      explanation: "El control mental es su mejor arma.",
-    },
-    {
-      id: "a2",
-      title: "Combo dron",
-      prompt: "Mira la cadena del rescate y lanzala en el mismo orden.",
-      inputLabel: "Encadena la jugada",
-      mode: "memory",
-      hint: "Cuanto más limpio el orden, más sólido el rescate.",
-      answerKind: "sequence",
-      options: ["Resbala", "Dron", "Apoyo", "Respira", "Sube"],
-      memorySequence: ["Resbala", "Dron", "Apoyo", "Respira", "Sube"],
-      memoryRevealMs: 4200,
-      answer: "RESBALA, DRON, APOYO, RESPIRA, SUBE",
-      explanation: "El apoyo del dron le devuelve el control y luego sigue subiendo.",
-    },
-    {
-      id: "a3",
-      title: "Canal secreto",
-      prompt: "La señal cae. Elige la maniobra que revive la misión.",
-      inputLabel: "Reabre la señal",
-      mode: "radar",
-      hint: "Eric no huye: busca una aliada.",
-      answerKind: "single-choice",
-      options: ["Confía en Esme", "Abandona la sala", "Llama a Benson", "Apaga el sistema"],
-      answer: "CONFIA EN ESME",
-      explanation: "Eric se arriesga y convierte a Esme en aliada.",
-    },
-    {
-      id: "a4",
-      title: "Carril oculto",
-      prompt: "Construye la ruta exacta antes de que el guardia alcance la cristalera.",
-      inputLabel: "Monta la ruta",
-      mode: "route",
-      hint: "Cada tramo importa; no hay hueco para piezas extra.",
-      answerKind: "sequence",
-      options: ["Izquierda", "Diez metros", "Sube", "Terraza", "Cúbrete"],
-      answer: "IZQUIERDA, DIEZ METROS, SUBE, TERRAZA, CUBRETE",
-      explanation: "Es la cadena que lleva a Amanda hasta la terraza y la salva del guardia.",
-    },
-    {
-      id: "a5",
-      title: "Alarma visual",
-      prompt: "Detecta primero lo que Eric ve antes de que sea tarde.",
-      inputLabel: "Marca la amenaza",
-      mode: "signal",
-      hint: "El peligro no es el dron: es quien se acerca.",
-      answerKind: "single-choice",
-      options: ["Un guardia se acerca", "Benson perdió el dron", "Esme salió corriendo", "La llave aparece"],
-      answer: "UN GUARDIA SE ACERCA",
-      explanation: "Ese aviso dispara la maniobra de escondite.",
-    },
-    {
-      id: "a6",
-      title: "Esprint final",
-      prompt: "Amanda ya está casi dentro. Ejecuta el cierre sin romper el ritmo.",
-      inputLabel: "Cierra la jugada",
-      mode: "route",
-      hint: "Esconderse, esperar y moverse en el hueco justo.",
-      answerKind: "sequence",
-      options: ["Jardineras", "Quieta", "Guardia pasa", "Avanza"],
-      answer: "JARDINERAS, QUIETA, GUARDIA PASA, AVANZA",
-      explanation: "Amanda se esconde, aguanta, espera el paso del guardia y luego avanza.",
-    },
+    ["astro", "🌙", "Luna", "from-indigo-400/40 to-sky-400/10"],
+    ["llave", "🗝️", "Llave", "from-amber-300/40 to-gold/10"],
+    ["mapa", "🗺️", "Mapa", "from-emerald-300/40 to-teal-400/10"],
+    ["lupa", "🔎", "Lupa", "from-cyan-300/40 to-blue-400/10"],
+    ["gema", "💎", "Gema", "from-fuchsia-300/40 to-rose-400/10"],
+    ["reloj", "⏰", "Reloj", "from-orange-300/40 to-amber-400/10"],
   ],
   leyenda: [
-    {
-      id: "l1",
-      title: "Radar omega",
-      prompt: "En modo leyenda, marca el detalle que rompe la estabilidad.",
-      inputLabel: "Fija el objetivo",
-      mode: "radar",
-      hint: "El error empieza en las manos, no en el entorno.",
-      answerKind: "single-choice",
-      options: ["Sus dedos patinan", "La música se detiene", "Esme grita", "Se cierra una puerta"],
-      answer: "SUS DEDOS PATINAN",
-      explanation: "La primera alarma es física: pierde el agarre.",
-    },
-    {
-      id: "l2",
-      title: "Cadena perfecta",
-      prompt: "Mira el rescate completo y lanzalo como una cadena limpia.",
-      inputLabel: "Clava la secuencia",
-      mode: "memory",
-      hint: "No sobra ningún paso en esta dificultad.",
-      answerKind: "sequence",
-      options: ["Resbala", "Dron", "Apoyo", "Agarre", "Respira", "Sube"],
-      memorySequence: ["Resbala", "Dron", "Apoyo", "Agarre", "Respira", "Sube"],
-      memoryRevealMs: 4000,
-      answer: "RESBALA, DRON, APOYO, AGARRE, RESPIRA, SUBE",
-      explanation: "La leyenda exige recordar cada paso del rescate.",
-    },
-    {
-      id: "l3",
-      title: "Señal fantasma",
-      prompt: "Elige por qué Esme se convierte en la pieza que salva toda la línea.",
-      inputLabel: "Recupera la línea",
-      mode: "signal",
-      hint: "Sin esa ayuda, Eric no alcanza a guiar la parte final.",
-      answerKind: "single-choice",
-      options: [
-        "Porque necesita llegar al piso correcto a tiempo",
-        "Porque conoce el código del banco",
-        "Porque dirige a los guardias",
-        "Porque controla la fiesta",
-      ],
-      answer: "PORQUE NECESITA LLEGAR AL PISO CORRECTO A TIEMPO",
-      explanation: "Sin esa ayuda, la guía final se rompe.",
-    },
-    {
-      id: "l4",
-      title: "Mapa maestro",
-      prompt: "Traza la ruta completa como si llevaras el mando del operativo.",
-      inputLabel: "Dibuja el mapa",
-      mode: "route",
-      hint: "Debe quedar exacta desde el giro inicial hasta la cobertura.",
-      answerKind: "sequence",
-      options: ["Izquierda", "Diez metros", "Sube", "Último piso", "Terraza", "Escóndete"],
-      answer: "IZQUIERDA, DIEZ METROS, SUBE, ULTIMO PISO, TERRAZA, ESCONDETE",
-      explanation: "La ruta de leyenda incluye el tramo completo hasta la terraza.",
-    },
-    {
-      id: "l5",
-      title: "Falso refugio",
-      prompt: "Lee la terraza y detecta qué vuelve casi inútil cualquier escondite.",
-      inputLabel: "Anula la trampa",
-      mode: "radar",
-      hint: "El problema no es tamaño ni humedad; es visibilidad.",
-      answerKind: "single-choice",
-      options: [
-        "El mobiliario es transparente",
-        "Todo está mojado",
-        "Hay cámaras en el techo",
-        "La terraza es pequeña",
-      ],
-      answer: "EL MOBILIARIO ES TRANSPARENTE",
-      explanation: "Amanda lo entiende de golpe: casi no hay dónde ocultarse.",
-    },
-    {
-      id: "l6",
-      title: "Pulso ninja",
-      prompt: "Encadena la maniobra exacta para desaparecer de la vista del guardia.",
-      inputLabel: "Ejecuta el sigilo",
-      mode: "memory",
-      hint: "Pequeña, quieta, invisible y luego movimiento.",
-      answerKind: "sequence",
-      options: ["Jardineras", "Encogerse", "Esperar", "Guardia pasa", "Despacho"],
-      answer: "JARDINERAS, ENCOGERSE, ESPERAR, GUARDIA PASA, DESPACHO",
-      explanation: "La clave es esconderse, hacerse pequeña, esperar y moverse en el hueco justo.",
-    },
-    {
-      id: "l7",
-      title: "Puerta de leyenda",
-      prompt: "Marca el logro exacto del último tramo guiado.",
-      inputLabel: "Cierra la misión",
-      mode: "signal",
-      hint: "No huye ni encuentra una llave: entra.",
-      answerKind: "single-choice",
-      options: [
-        "Entrar en la terraza del despacho de Irma Dagon",
-        "Huir de la torre",
-        "Encontrar la llave en el ascensor",
-        "Apagar los drones",
-      ],
-      answer: "ENTRAR EN LA TERRAZA DEL DESPACHO DE IRMA DAGON",
-      explanation: "Ese es el cierre perfecto del recorrido.",
-    },
-    {
-      id: "l8",
-      title: "Combo definitivo",
-      prompt: "Une rescate, apoyo, ruta y entrada final en una sola corrida perfecta.",
-      inputLabel: "Fusiona la jugada",
-      mode: "route",
-      hint: "La última ronda pide leer la misión completa como una sola línea.",
-      answerKind: "sequence",
-      options: ["Resbala", "Dron", "Esme", "Ruta", "Jardineras", "Despacho"],
-      answer: "RESBALA, DRON, ESME, RUTA, JARDINERAS, DESPACHO",
-      explanation: "La versión leyenda pide unir rescate, apoyo, guía y entrada final en una sola cadena.",
-    },
+    ["astro", "🌙", "Luna", "from-indigo-400/40 to-sky-400/10"],
+    ["llave", "🗝️", "Llave", "from-amber-300/40 to-gold/10"],
+    ["mapa", "🗺️", "Mapa", "from-emerald-300/40 to-teal-400/10"],
+    ["lupa", "🔎", "Lupa", "from-cyan-300/40 to-blue-400/10"],
+    ["gema", "💎", "Gema", "from-fuchsia-300/40 to-rose-400/10"],
+    ["reloj", "⏰", "Reloj", "from-orange-300/40 to-amber-400/10"],
+    ["candado", "🔐", "Candado", "from-lime-300/40 to-emerald-400/10"],
+    ["pluma", "🪶", "Pluma", "from-pink-300/40 to-fuchsia-400/10"],
   ],
-};
+} satisfies Record<DifficultyLevel, Array<[string, string, string, string]>>;
+
+function normalizeText(value: string) {
+  return value
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function buildCrosswordStage(difficulty: DifficultyLevel): StageDefinition {
+  const config = crosswordByDifficulty[difficulty];
+  const slots = config.answer.split("").map((_, index) => [config.row, config.startCol + index] as [number, number]);
+  const blocks: Array<[number, number]> = [];
+
+  for (let row = 0; row < config.size; row += 1) {
+    for (let col = 0; col < config.size; col += 1) {
+      if (!slots.some(([slotRow, slotCol]) => slotRow === row && slotCol === col)) {
+        blocks.push([row, col]);
+      }
+    }
+  }
+
+  return {
+    id: `crossword-${difficulty}`,
+    miniGameType: "crucigrama",
+    title: "Crucigrama de acceso",
+    prompt: "Completa la palabra clave dentro de la cuadrícula.",
+    instructions: "Toca una casilla y coloca una letra del banco.",
+    pointsLabel: "Completa la palabra secreta",
+    crossword: {
+      size: config.size,
+      blocks,
+      slots,
+      clue: config.clue,
+      letterBank: config.bank,
+    },
+    answer: normalizeText(config.answer),
+  };
+}
+
+function buildWordSearchStage(difficulty: DifficultyLevel): StageDefinition {
+  const config = wordSearchByDifficulty[difficulty];
+  return {
+    id: `wordsearch-${difficulty}`,
+    miniGameType: "sopa",
+    title: "Sopa de letras nocturna",
+    prompt: "Encuentra todas las palabras escondidas del tablero.",
+    instructions: "Selecciona letras en la rejilla y confirma cada palabra.",
+    pointsLabel: `${config.words.length} palabras ocultas`,
+    wordSearch: config,
+    answer: config.words.map(normalizeText).sort().join("|"),
+  };
+}
+
+function buildDrawingStage(difficulty: DifficultyLevel, drawerPlayerId: string): StageDefinition {
+  const config = drawingByDifficulty[difficulty];
+  return {
+    id: `drawing-${difficulty}`,
+    miniGameType: "dibujo",
+    title: "Dibujo en clave",
+    prompt: "Una persona dibuja en vivo y el resto adivina la pieza secreta.",
+    instructions: "El dibujante usa el lienzo. Los demas eligen una respuesta.",
+    pointsLabel: "Adivina antes de cerrar la ronda",
+    drawing: {
+      drawerPlayerId,
+      promptForDrawer: config.prompt,
+      options: config.options,
+      strokes: [] as DrawingStroke[],
+      brushPalette,
+    },
+    answer: normalizeText(config.prompt),
+  };
+}
+
+function buildMemoryStage(difficulty: DifficultyLevel): StageDefinition {
+  const cards = memoryByDifficulty[difficulty].flatMap(([pairId, icon, label, tint], index) => {
+    const cardA: MemoryCard = { id: `${pairId}-a-${index}`, pairId, icon, label, tint };
+    const cardB: MemoryCard = { id: `${pairId}-b-${index}`, pairId, icon, label, tint };
+    return [cardA, cardB];
+  });
+
+  const shuffled = [...cards].sort((left, right) => left.pairId.localeCompare(right.pairId) || left.id.localeCompare(right.id));
+
+  return {
+    id: `memory-${difficulty}`,
+    miniGameType: "memorama",
+    title: "Memorama de reliquias",
+    prompt: "Voltea las cartas y encuentra todas las parejas ilustradas.",
+    instructions: "Toca dos cartas por turno hasta limpiar el tablero.",
+    pointsLabel: `${shuffled.length / 2} parejas por completar`,
+    memory: {
+      cards: shuffled,
+    },
+    answer: [...new Set(shuffled.map((card) => normalizeText(card.pairId)))].sort().join("|"),
+  };
+}
+
+function getDrawerPlayerId(playerIds: string[], stageIndex: number) {
+  return playerIds[stageIndex % playerIds.length];
+}
+
+export function buildStageQueue(
+  difficulty: DifficultyLevel,
+  playlist: MiniGameType[],
+  playerIds: string[],
+): StageDefinition[] {
+  return playlist.map((miniGameType, stageIndex) => {
+    switch (miniGameType) {
+      case "crucigrama":
+        return buildCrosswordStage(difficulty);
+      case "sopa":
+        return buildWordSearchStage(difficulty);
+      case "dibujo":
+        return buildDrawingStage(difficulty, getDrawerPlayerId(playerIds, stageIndex));
+      case "memorama":
+      default:
+        return buildMemoryStage(difficulty);
+    }
+  });
+}

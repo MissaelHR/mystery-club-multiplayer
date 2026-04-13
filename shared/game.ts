@@ -2,10 +2,11 @@ export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 6;
 export const ROOM_TTL_MS = 30 * 60 * 1000;
 export const GAME_TITLE = "UNASLETAS AMANDA BLACK";
-export const GAME_SUBTITLE = "Una carrera arcade de reflejos, memoria y rutas secretas.";
+export const GAME_SUBTITLE = "Crucigramas, rutas ocultas, dibujos y memorias en una mision cooperativa.";
 
 export type GamePhase = "lobby" | "playing" | "finished";
 export type DifficultyLevel = "explorador" | "agente" | "leyenda";
+export type MiniGameType = "crucigrama" | "sopa" | "dibujo" | "memorama";
 
 export interface DifficultyOption {
   id: DifficultyLevel;
@@ -14,25 +15,24 @@ export interface DifficultyOption {
   badge: string;
 }
 
+export interface MiniGameCatalogItem {
+  id: MiniGameType;
+  title: string;
+  summary: string;
+  accent: string;
+}
+
 export const DIFFICULTY_OPTIONS: DifficultyOption[] = [
-  {
-    id: "explorador",
-    title: "Explorador",
-    summary: "Tramos cortos y movimientos fáciles para empezar.",
-    badge: "Suave",
-  },
-  {
-    id: "agente",
-    title: "Agente",
-    summary: "Más giros, más trampas y decisiones más finas.",
-    badge: "Reto",
-  },
-  {
-    id: "leyenda",
-    title: "Leyenda",
-    summary: "Ruta completa, secuencias largas y tensión total.",
-    badge: "Pro",
-  },
+  { id: "explorador", title: "Explorador", summary: "Tableros cortos y rondas rapidas.", badge: "Suave" },
+  { id: "agente", title: "Agente", summary: "Mas piezas, mas rutas y pistas cruzadas.", badge: "Reto" },
+  { id: "leyenda", title: "Leyenda", summary: "Version completa con maxima presion.", badge: "Pro" },
+];
+
+export const MINI_GAME_CATALOG: MiniGameCatalogItem[] = [
+  { id: "crucigrama", title: "Crucigrama", summary: "Rellena una palabra secreta en una cuadricula real.", accent: "from-amber-300/25 to-gold/5" },
+  { id: "sopa", title: "Sopa de letras", summary: "Encuentra palabras escondidas dentro de la rejilla.", accent: "from-cyan-300/25 to-sky-400/5" },
+  { id: "dibujo", title: "Dibujo", summary: "Un jugador dibuja y el resto adivina en vivo.", accent: "from-rose-300/25 to-fuchsia-400/5" },
+  { id: "memorama", title: "Memorama", summary: "Voltea cartas ilustradas y completa todas las parejas.", accent: "from-emerald-300/25 to-teal-400/5" },
 ];
 
 export interface PlayerPublic {
@@ -44,22 +44,60 @@ export interface PlayerPublic {
   answeredCurrentStage: boolean;
 }
 
+export interface CrosswordPublicData {
+  size: number;
+  blocks: Array<[number, number]>;
+  slots: Array<[number, number]>;
+  clue: string;
+  letterBank: string[];
+}
+
+export interface WordSearchPublicData {
+  grid: string[][];
+  words: string[];
+}
+
+export interface DrawingStroke {
+  color: string;
+  size: number;
+  points: Array<{ x: number; y: number }>;
+}
+
+export interface DrawingPublicData {
+  drawerPlayerId: string;
+  promptForDrawer?: string;
+  options: string[];
+  strokes: DrawingStroke[];
+  brushPalette: string[];
+}
+
+export interface MemoryCard {
+  id: string;
+  pairId: string;
+  icon: string;
+  label: string;
+  tint: string;
+}
+
+export interface MemoryPublicData {
+  cards: MemoryCard[];
+}
+
 export interface StagePublic {
   id: string;
+  miniGameType: MiniGameType;
   title: string;
   prompt: string;
-  inputLabel: string;
-  mode: "radar" | "memory" | "route" | "signal";
-  hint: string;
-  answerKind: "single-choice" | "sequence";
-  options?: string[];
-  memorySequence?: string[];
-  memoryRevealMs?: number;
+  instructions: string;
+  pointsLabel: string;
+  crossword?: CrosswordPublicData;
+  wordSearch?: WordSearchPublicData;
+  drawing?: DrawingPublicData;
+  memory?: MemoryPublicData;
 }
 
 export interface StageDefinition extends StagePublic {
   answer: string;
-  explanation: string;
 }
 
 export interface StageResult {
@@ -91,7 +129,9 @@ export interface RoomState {
   gameTitle: string;
   gameSubtitle: string;
   selectedDifficulty: DifficultyLevel;
+  configuredMiniGames: MiniGameType[];
   availableDifficulties: DifficultyOption[];
+  availableMiniGames: MiniGameCatalogItem[];
   currentStageNumber: number;
   totalStages: number;
   stage: StagePublic | null;
@@ -129,6 +169,7 @@ export interface SubmitAnswerPayload {
 export interface ConfigureGamePayload {
   roomCode: string;
   difficulty: DifficultyLevel;
+  playlist: MiniGameType[];
 }
 
 export interface RoomPayload {
@@ -138,6 +179,11 @@ export interface RoomPayload {
 export interface KickPlayerPayload {
   roomCode: string;
   targetPlayerId: string;
+}
+
+export interface DrawingStrokePayload {
+  roomCode: string;
+  stroke: DrawingStroke;
 }
 
 export interface ServerToClientEvents {
@@ -166,4 +212,6 @@ export interface ClientToServerEvents {
   "game:end": (payload: RoomPayload) => void;
   "game:restart": (payload: RoomPayload) => void;
   "round:submit": (payload: SubmitAnswerPayload) => void;
+  "drawing:stroke": (payload: DrawingStrokePayload) => void;
+  "drawing:clear": (payload: RoomPayload) => void;
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { DifficultyLevel, PlayerPublic, RoomState } from "@shared/game";
+import { DifficultyLevel, DrawingStroke, MiniGameType, PlayerPublic, RoomState } from "@shared/game";
 import { HomeScreen } from "./components/HomeScreen";
 import { LobbyScreen } from "./components/LobbyScreen";
 import { RoundScreen } from "./components/RoundScreen";
@@ -122,6 +122,7 @@ function App() {
     if (!room || !playerId || !me) {
       return;
     }
+
     const session = loadSession();
     saveSession({
       roomCode: room.code,
@@ -130,12 +131,12 @@ function App() {
     });
   }, [me, playerId, room]);
 
-  const configureGame = (difficulty: DifficultyLevel) => {
+  const configureGame = (difficulty: DifficultyLevel, playlist: MiniGameType[]) => {
     if (!room) {
       return;
     }
     setError(null);
-    socket.emit("game:configure", { roomCode: room.code, difficulty });
+    socket.emit("game:configure", { roomCode: room.code, difficulty, playlist });
   };
 
   const startGame = () => {
@@ -170,6 +171,20 @@ function App() {
     socket.emit("round:submit", { roomCode: room.code, answer });
   };
 
+  const sendDrawingStroke = (stroke: DrawingStroke) => {
+    if (!room) {
+      return;
+    }
+    socket.emit("drawing:stroke", { roomCode: room.code, stroke });
+  };
+
+  const clearDrawing = () => {
+    if (!room) {
+      return;
+    }
+    socket.emit("drawing:clear", { roomCode: room.code });
+  };
+
   const kickPlayer = (targetPlayerId: string) => {
     if (!room) {
       return;
@@ -188,8 +203,9 @@ function App() {
         <div>
           <p className="text-xs uppercase tracking-[0.5em] text-gold/75">UNASLETAS AMANDA BLACK</p>
           <h1 className="mt-2 font-display text-3xl text-parchment md:text-5xl">{room.gameTitle}</h1>
-          <p className="mt-2 max-w-2xl text-sm text-mist/70 md:text-base">{room.gameSubtitle}</p>
+          <p className="mt-2 max-w-3xl text-sm text-mist/70 md:text-base">{room.gameSubtitle}</p>
         </div>
+
         <div className="grid grid-cols-2 gap-3 text-sm text-mist/70 sm:flex sm:flex-wrap">
           <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-center">Sala {room.code}</div>
           <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-center">
@@ -208,7 +224,7 @@ function App() {
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.38fr_0.62fr]">
         <div>
           {room.phase === "lobby" ? (
             <LobbyScreen
@@ -220,18 +236,27 @@ function App() {
               onKick={kickPlayer}
             />
           ) : null}
-          {room.phase === "playing" ? <RoundScreen room={room} me={me} onSubmit={submitAnswer} onEnd={endGame} /> : null}
+          {room.phase === "playing" ? (
+            <RoundScreen
+              room={room}
+              me={me}
+              onSubmit={submitAnswer}
+              onEnd={endGame}
+              onDrawingStroke={sendDrawingStroke}
+              onClearDrawing={clearDrawing}
+            />
+          ) : null}
           {room.phase === "finished" ? <WinnerScreen room={room} me={me} onRestart={restartGame} /> : null}
         </div>
 
         <div className="space-y-6">
           <Scoreboard players={room.players} winners={room.winners} isPlaying={room.phase === "playing"} />
           <section className="panel p-5">
-            <h3 className="font-display text-2xl text-parchment">Modo arcade</h3>
+            <h3 className="font-display text-2xl text-parchment">Mision</h3>
             <div className="mt-4 space-y-3 text-sm leading-7 text-mist/80">
-              <p>Suma puntos en cada ronda. Fallar no te elimina.</p>
-              <p>Memoria, radar, rutas y decisiones rápidas en una sola carrera.</p>
-              <p>El anfitrion puede iniciar, reiniciar o finalizar la partida en vivo.</p>
+              <p>El anfitrion puede ordenar los minijuegos antes de lanzar la sala.</p>
+              <p>Cada ronda suma puntos y el marcador se actualiza para todos en vivo.</p>
+              <p>Crucigrama, sopa, dibujo y memorama comparten la misma partida.</p>
             </div>
           </section>
         </div>
