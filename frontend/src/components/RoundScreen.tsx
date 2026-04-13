@@ -45,14 +45,14 @@ export function RoundScreen({ room, me, onSubmit }: RoundScreenProps) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm uppercase tracking-[0.35em] text-gold/75">
-            Capítulo 28 · Etapa {room.currentStageNumber} de {room.totalStages}
+            Etapa {room.currentStageNumber} de {room.totalStages}
           </p>
           <h2 className="mt-2 font-display text-4xl text-parchment">{room.selectedMiniGame.title}</h2>
           <p className="mt-2 text-lg text-mist/80">{stage.title}</p>
         </div>
         <div className="rounded-2xl border border-gold/25 bg-gold/10 px-5 py-3 text-right">
-          <p className="text-xs uppercase tracking-[0.25em] text-gold/75">Sin temporizador</p>
-          <p className="text-lg font-semibold text-parchment">Piensa bien antes de enviar</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-gold/75">Modo</p>
+          <p className="text-lg font-semibold text-parchment">Sin tiempo</p>
         </div>
       </div>
 
@@ -122,9 +122,7 @@ export function RoundScreen({ room, me, onSubmit }: RoundScreenProps) {
           >
             Enviar respuesta
           </button>
-          <p className="text-sm text-mist/70">
-            Si alguien responde mal, la partida se cierra. Si todos aciertan, se avanza a la siguiente etapa.
-          </p>
+          <p className="text-sm text-mist/70">Si fallas, se acaba la partida.</p>
           {submittedAlready ? <p className="text-sm text-gold/80">Ya respondiste esta etapa.</p> : null}
         </div>
       </form>

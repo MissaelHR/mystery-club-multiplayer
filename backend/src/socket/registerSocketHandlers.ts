@@ -211,7 +211,13 @@ export function registerSocketHandlers(io: MysteryServer) {
         return;
       }
 
-      const result = submitAnswer(room, socket.id, answer);
+      const playerId = findPlayerIdBySocket(roomCode, socket.id);
+      if (!playerId) {
+        emitError(socket, "Jugador no encontrado en la sala.");
+        return;
+      }
+
+      const result = submitAnswer(room, playerId, answer);
       if ("error" in result && result.error) {
         emitError(socket, result.error);
       }

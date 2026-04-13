@@ -29,14 +29,13 @@ export function HomeScreen({ error, onCreateRoom, onJoinRoom }: HomeScreenProps)
     <div className="mx-auto grid min-h-screen max-w-7xl gap-8 px-4 py-6 md:px-6 lg:grid-cols-[1.2fr_0.8fr] lg:py-10">
       <section className="flex flex-col justify-between rounded-[2rem] border border-gold/20 bg-slate-950/60 p-6 shadow-glow backdrop-blur-xl md:p-8">
         <div className="space-y-6">
-          <p className="text-sm uppercase tracking-[0.4em] text-gold/80">UNASLETAS A LA PAGINA</p>
+          <p className="text-sm uppercase tracking-[0.4em] text-gold/80">UNASLETAS AMANDA BLACK</p>
           <div className="space-y-4">
             <h1 className="max-w-3xl font-display text-4xl leading-tight text-parchment md:text-6xl">
-              Capítulo 28 convertido en cinco minijuegos cooperativos y competitivos en vivo.
+              Elige un reto. Crea la sala. Entra a jugar.
             </h1>
             <p className="max-w-2xl text-base leading-7 text-mist/80 md:text-lg md:leading-8">
-              El anfitrión elige el minijuego antes de crear la sala. Después todos entran, responden en
-              vivo y ven el marcador actualizado al instante.
+              Cinco minijuegos del capítulo 28. Rápidos, visuales y en vivo.
             </p>
           </div>
         </div>
@@ -60,7 +59,7 @@ export function HomeScreen({ error, onCreateRoom, onJoinRoom }: HomeScreenProps)
       <section className="flex flex-col gap-6">
         <form onSubmit={handleCreate} className="panel p-6">
           <p className="text-sm uppercase tracking-[0.35em] text-gold/70">Crear minijuego y sala</p>
-          <h2 className="mt-3 font-display text-3xl text-parchment">Panel del anfitrión</h2>
+          <h2 className="mt-3 font-display text-3xl text-parchment">Anfitrión</h2>
 
           <label className="mt-6 block text-sm text-mist/80">
             Nombre del anfitrión
@@ -89,7 +88,7 @@ export function HomeScreen({ error, onCreateRoom, onJoinRoom }: HomeScreenProps)
           </label>
 
           <div className="mt-4 rounded-2xl border border-gold/25 bg-gold/10 p-4">
-            <p className="text-xs uppercase tracking-[0.25em] text-gold/75">Seleccionado</p>
+            <p className="text-xs uppercase tracking-[0.25em] text-gold/75">Reto</p>
             <p className="mt-2 font-semibold text-parchment">{selectedMiniGame.title}</p>
             <p className="mt-2 text-sm leading-6 text-mist/80">{selectedMiniGame.summary}</p>
           </div>
@@ -101,7 +100,7 @@ export function HomeScreen({ error, onCreateRoom, onJoinRoom }: HomeScreenProps)
 
         <form onSubmit={handleJoin} className="panel p-6">
           <p className="text-sm uppercase tracking-[0.35em] text-gold/70">Unirse a una sala</p>
-          <h2 className="mt-3 font-display text-3xl text-parchment">Entrar al juego</h2>
+          <h2 className="mt-3 font-display text-3xl text-parchment">Jugar</h2>
 
           <label className="mt-6 block text-sm text-mist/80">
             Nombre del jugador

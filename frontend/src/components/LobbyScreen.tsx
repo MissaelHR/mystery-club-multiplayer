@@ -22,13 +22,13 @@ export function LobbyScreen({ room, me, onConfigure, onStart, onKick }: LobbyScr
       </div>
 
       <div className="mt-6 rounded-3xl border border-gold/20 bg-black/20 p-5">
-        <p className="text-sm uppercase tracking-[0.25em] text-gold/75">Minijuego creado</p>
+        <p className="text-sm uppercase tracking-[0.25em] text-gold/75">Reto activo</p>
         <h3 className="mt-2 font-display text-3xl text-parchment">{room.selectedMiniGame.title}</h3>
         <p className="mt-2 text-mist/80">{room.selectedMiniGame.summary}</p>
 
         {me?.isHost ? (
           <div className="mt-4">
-            <label className="block text-sm text-mist/75">Cambiar minijuego</label>
+            <label className="block text-sm text-mist/75">Cambiar reto</label>
             <select
               value={room.selectedMiniGameId}
               onChange={(event) => onConfigure(event.target.value)}
@@ -76,15 +76,15 @@ export function LobbyScreen({ room, me, onConfigure, onStart, onKick }: LobbyScr
             disabled={!canStart}
             className="rounded-2xl bg-gold px-6 py-3 font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-slate-500"
           >
-            Iniciar minijuego
+            Empezar
           </button>
         ) : (
           <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-mist/80">
-            Esperando a que el anfitrión inicie la partida.
+            Esperando al anfitrión.
           </div>
         )}
         {!canStart ? (
-          <p className="text-sm text-mist/70">Se necesitan al menos {MIN_PLAYERS} jugadores para comenzar.</p>
+          <p className="text-sm text-mist/70">Faltan jugadores para empezar.</p>
         ) : null}
       </div>
     </section>

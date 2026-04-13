@@ -15,7 +15,7 @@ export function WinnerScreen({ room, me, onRestart }: WinnerScreenProps) {
 
   return (
     <section className="panel-strong p-5 md:p-8">
-      <p className="text-sm uppercase tracking-[0.35em] text-gold/75">Partida finalizada</p>
+      <p className="text-sm uppercase tracking-[0.35em] text-gold/75">Final</p>
       <h2 className="mt-3 font-display text-4xl text-parchment md:text-5xl">{room.finished.headline}</h2>
       <p className="mt-4 max-w-3xl text-base leading-8 text-mist/85 md:text-lg">{room.finished.explanation}</p>
 
@@ -49,7 +49,7 @@ export function WinnerScreen({ room, me, onRestart }: WinnerScreenProps) {
 
       {champion ? (
         <div className="mt-6 rounded-[2rem] border border-gold/25 bg-gold/10 p-6">
-          <p className="text-sm uppercase tracking-[0.25em] text-gold/75">Puntero del marcador</p>
+          <p className="text-sm uppercase tracking-[0.25em] text-gold/75">Ganador</p>
           <h3 className="mt-2 font-display text-4xl text-parchment">{champion.name}</h3>
           <p className="mt-2 text-xl text-gold">{champion.score} puntos</p>
         </div>

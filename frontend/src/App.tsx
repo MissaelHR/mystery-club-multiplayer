@@ -40,6 +40,7 @@ function App() {
   useEffect(() => {
     const handleRoom = (nextRoom: RoomState) => {
       setRoom(nextRoom);
+      setError(null);
     };
     const handleError = (message: string) => {
       setError(message);
@@ -177,8 +178,8 @@ function App() {
     <main className="mx-auto min-h-screen max-w-7xl px-4 py-6 md:px-6 md:py-8">
       <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-sm uppercase tracking-[0.4em] text-gold/75">UNASLETAS A LA PAGINA</p>
-          <h1 className="mt-2 font-display text-3xl text-parchment md:text-4xl">Capítulo 28: Drones al rescate</h1>
+          <p className="text-sm uppercase tracking-[0.4em] text-gold/75">UNASLETAS AMANDA BLACK</p>
+          <h1 className="mt-2 font-display text-3xl text-parchment md:text-4xl">Drones al rescate</h1>
         </div>
         <div className="flex flex-wrap gap-3 text-sm text-mist/70">
           <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2">Sala {room.code}</div>
@@ -207,15 +208,8 @@ function App() {
         <div className="space-y-6">
           <Scoreboard players={room.players} winners={room.winners} isPlaying={room.phase === "playing"} />
           <section className="panel p-5">
-            <h3 className="font-display text-2xl text-parchment">Cómo funciona</h3>
-            <p className="mt-4 leading-7 text-mist/80">
-              El anfitrión crea primero el minijuego y luego la sala. Todos pueden recargar la página y
-              regresar a su sala si su sesión sigue activa.
-            </p>
-            <p className="mt-3 leading-7 text-mist/70">
-              Cada minijuego tiene varias etapas, no hay temporizador, el marcador se actualiza en vivo y
-              un fallo cierra la partida.
-            </p>
+            <h3 className="font-display text-2xl text-parchment">Reglas</h3>
+            <p className="mt-4 leading-7 text-mist/80">Todos ven el marcador en vivo. Un fallo cierra la partida.</p>
           </section>
         </div>
       </div>
