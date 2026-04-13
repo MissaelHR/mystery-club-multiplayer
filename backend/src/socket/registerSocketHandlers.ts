@@ -69,7 +69,7 @@ export function registerSocketHandlers(io: MysteryServer) {
         return;
       }
 
-      const { room, playerId } = createRoom(payload.playerName, payload.miniGameId, socket.id);
+      const { room, playerId } = createRoom(payload.playerName, payload.difficulty, socket.id);
       socket.join(room.code);
       callback({
         ok: true,
@@ -146,7 +146,7 @@ export function registerSocketHandlers(io: MysteryServer) {
       }
     });
 
-    socket.on("game:configure", ({ roomCode, miniGameId }) => {
+    socket.on("game:configure", ({ roomCode, difficulty }) => {
       const room = getRoom(roomCode);
       if (!room) {
         emitError(socket, "Sala no encontrada.");
@@ -154,11 +154,11 @@ export function registerSocketHandlers(io: MysteryServer) {
       }
 
       if (room.hostId !== findPlayerIdBySocket(roomCode, socket.id)) {
-        emitError(socket, "Solo el anfitrión puede elegir el minijuego.");
+        emitError(socket, "Solo el anfitrión puede elegir la dificultad.");
         return;
       }
 
-      const result = configureGame(room, miniGameId);
+      const result = configureGame(room, difficulty);
       if ("error" in result && result.error) {
         emitError(socket, result.error);
         return;

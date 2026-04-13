@@ -1,16 +1,39 @@
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 6;
 export const ROOM_TTL_MS = 30 * 60 * 1000;
-export const CHAPTER_NUMBER = 28;
-export const CHAPTER_TITLE = "Drones al rescate";
+export const GAME_TITLE = "UNASLETAS AMANDA BLACK";
+export const GAME_SUBTITLE = "Pilota, esquiva trampas y llega hasta la azotea.";
 
 export type GamePhase = "lobby" | "playing" | "finished";
-export type MiniGameKind =
-  | "preguntas-rapidas"
-  | "memoria-flash"
-  | "rastro-drone"
-  | "decision-secreta"
-  | "secuencia-de-altura";
+export type DifficultyLevel = "explorador" | "agente" | "leyenda";
+
+export interface DifficultyOption {
+  id: DifficultyLevel;
+  title: string;
+  summary: string;
+  badge: string;
+}
+
+export const DIFFICULTY_OPTIONS: DifficultyOption[] = [
+  {
+    id: "explorador",
+    title: "Explorador",
+    summary: "Tramos cortos y movimientos fáciles para empezar.",
+    badge: "Suave",
+  },
+  {
+    id: "agente",
+    title: "Agente",
+    summary: "Más giros, más trampas y decisiones más finas.",
+    badge: "Reto",
+  },
+  {
+    id: "leyenda",
+    title: "Leyenda",
+    summary: "Ruta completa, secuencias largas y tensión total.",
+    badge: "Pro",
+  },
+];
 
 export interface PlayerPublic {
   id: string;
@@ -21,64 +44,12 @@ export interface PlayerPublic {
   answeredCurrentStage: boolean;
 }
 
-export interface MiniGameCatalogItem {
-  id: string;
-  chapterNumber: number;
-  chapterTitle: string;
-  title: string;
-  kind: MiniGameKind;
-  summary: string;
-}
-
-export const MINI_GAME_CATALOG: MiniGameCatalogItem[] = [
-  {
-    id: "ruta-del-guardia",
-    chapterNumber: CHAPTER_NUMBER,
-    chapterTitle: CHAPTER_TITLE,
-    title: "Ruta del guardia",
-    kind: "preguntas-rapidas",
-    summary: "Tres rondas de decisiones para detectar riesgos antes de que Amanda sea vista.",
-  },
-  {
-    id: "memoria-de-drones",
-    chapterNumber: CHAPTER_NUMBER,
-    chapterTitle: CHAPTER_TITLE,
-    title: "Memoria de drones",
-    kind: "memoria-flash",
-    summary: "Recuerda secuencias cortas inspiradas en el rescate de Benson.",
-  },
-  {
-    id: "comandos-de-eric",
-    chapterNumber: CHAPTER_NUMBER,
-    chapterTitle: CHAPTER_TITLE,
-    title: "Comandos de Eric",
-    kind: "rastro-drone",
-    summary: "Sigue las instrucciones correctas de Eric para mantener la misión en curso.",
-  },
-  {
-    id: "escondite-transparente",
-    chapterNumber: CHAPTER_NUMBER,
-    chapterTitle: CHAPTER_TITLE,
-    title: "Escondite transparente",
-    kind: "decision-secreta",
-    summary: "Elige la mejor cobertura cuando todo alrededor parece visible.",
-  },
-  {
-    id: "pulso-en-la-altura",
-    chapterNumber: CHAPTER_NUMBER,
-    chapterTitle: CHAPTER_TITLE,
-    title: "Pulso en la altura",
-    kind: "secuencia-de-altura",
-    summary: "Encadena pasos de sangre fría para que Amanda siga avanzando.",
-  },
-];
-
 export interface StagePublic {
   id: string;
   title: string;
   prompt: string;
   inputLabel: string;
-  answerKind: "single-choice" | "text" | "sequence";
+  answerKind: "single-choice" | "sequence";
   options?: string[];
   memorySequence?: string[];
   memoryRevealMs?: number;
@@ -87,10 +58,6 @@ export interface StagePublic {
 export interface StageDefinition extends StagePublic {
   answer: string;
   explanation: string;
-}
-
-export interface MiniGameDefinition extends MiniGameCatalogItem {
-  stages: StageDefinition[];
 }
 
 export interface StageResult {
@@ -121,9 +88,10 @@ export interface RoomState {
   phase: GamePhase;
   hostId: string;
   players: PlayerPublic[];
-  selectedMiniGameId: string;
-  selectedMiniGame: MiniGameCatalogItem;
-  availableMiniGames: MiniGameCatalogItem[];
+  gameTitle: string;
+  gameSubtitle: string;
+  selectedDifficulty: DifficultyLevel;
+  availableDifficulties: DifficultyOption[];
   currentStageNumber: number;
   totalStages: number;
   stage: StagePublic | null;
@@ -134,7 +102,7 @@ export interface RoomState {
 
 export interface CreateRoomPayload {
   playerName: string;
-  miniGameId: string;
+  difficulty: DifficultyLevel;
 }
 
 export interface JoinRoomPayload {
@@ -160,7 +128,7 @@ export interface SubmitAnswerPayload {
 
 export interface ConfigureGamePayload {
   roomCode: string;
-  miniGameId: string;
+  difficulty: DifficultyLevel;
 }
 
 export interface RoomPayload {

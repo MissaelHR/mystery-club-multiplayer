@@ -18,7 +18,7 @@ export function RoundScreen({ room, me, onSubmit }: RoundScreenProps) {
   useEffect(() => {
     setAnswer("");
     setSequenceSteps([]);
-  }, [room.currentStageNumber, room.phase, room.selectedMiniGameId]);
+  }, [room.currentStageNumber, room.phase, room.selectedDifficulty]);
 
   useEffect(() => {
     if (!stage?.memorySequence || !stage.memoryRevealMs) {
@@ -67,17 +67,17 @@ export function RoundScreen({ room, me, onSubmit }: RoundScreenProps) {
           <p className="text-sm uppercase tracking-[0.35em] text-gold/75">
             Etapa {room.currentStageNumber} de {room.totalStages}
           </p>
-          <h2 className="mt-2 font-display text-4xl text-parchment">{room.selectedMiniGame.title}</h2>
+          <h2 className="mt-2 font-display text-4xl text-parchment">{room.gameTitle}</h2>
           <p className="mt-2 text-lg text-mist/80">{stage.title}</p>
         </div>
         <div className="rounded-2xl border border-gold/25 bg-gold/10 px-5 py-3 text-right">
-          <p className="text-xs uppercase tracking-[0.25em] text-gold/75">Modo</p>
-          <p className="text-lg font-semibold text-parchment">Sin tiempo</p>
+          <p className="text-xs uppercase tracking-[0.25em] text-gold/75">Nivel</p>
+          <p className="text-lg font-semibold capitalize text-parchment">{room.selectedDifficulty}</p>
         </div>
       </div>
 
       <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-5">
-        <p className="text-sm uppercase tracking-[0.25em] text-mist/50">{room.selectedMiniGame.kind.replace(/-/g, " ")}</p>
+        <p className="text-sm uppercase tracking-[0.25em] text-mist/50">Misión activa</p>
         <p className="mt-3 text-lg leading-8 text-mist/90">{stage.prompt}</p>
         <div className="mt-4 flex gap-2">
           {Array.from({ length: room.totalStages }).map((_, index) => (

@@ -1,6 +1,9 @@
 import {
+  DIFFICULTY_OPTIONS,
+  DifficultyLevel,
+  GAME_SUBTITLE,
+  GAME_TITLE,
   MAX_PLAYERS,
-  MINI_GAME_CATALOG,
   MIN_PLAYERS,
   PlayerPublic,
   ROOM_TTL_MS,
@@ -9,7 +12,7 @@ import {
   StagePublic,
   WinnerSummary,
 } from "../../../shared/game";
-import { miniGamesById } from "./rounds";
+import { stagesByDifficulty } from "./rounds";
 
 interface PlayerInternal {
   id: string;
@@ -32,7 +35,7 @@ interface RoomInternal {
   hostId: string;
   players: Map<string, PlayerInternal>;
   phase: RoomState["phase"];
-  selectedMiniGameId: string;
+  selectedDifficulty: DifficultyLevel;
   currentStageIndex: number;
   stage: StageDefinition | null;
   submissions: Map<string, Submission>;
@@ -78,6 +81,10 @@ function normalizeText(value: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function getStages(room: RoomInternal) {
+  return stagesByDifficulty[room.selectedDifficulty];
+}
+
 function toStagePublic(stage: StageDefinition | null): StagePublic | null {
   if (!stage) {
     return null;
@@ -120,20 +127,15 @@ function resetAnswers(room: RoomInternal) {
   }
 }
 
-function getCurrentMiniGame(room: RoomInternal) {
-  return miniGamesById.get(room.selectedMiniGameId)!;
-}
-
 function advanceStage(room: RoomInternal) {
-  const miniGame = getCurrentMiniGame(room);
-
-  if (room.currentStageIndex >= miniGame.stages.length) {
+  const stages = getStages(room);
+  if (room.currentStageIndex >= stages.length) {
     room.phase = "finished";
     room.stage = null;
     room.finished = {
       outcome: "victory",
-      headline: "Misión completada",
-      explanation: "El equipo superó todas las etapas del minijuego del capítulo 28.",
+      headline: "Ruta completada",
+      explanation: `Amanda superó la torre en modo ${room.selectedDifficulty}.`,
       stageResults: sortPlayers(room.players.values()).map((player) => ({
         playerId: player.id,
         playerName: player.name,
@@ -145,7 +147,7 @@ function advanceStage(room: RoomInternal) {
     return;
   }
 
-  room.stage = miniGame.stages[room.currentStageIndex];
+  room.stage = stages[room.currentStageIndex];
   room.phase = "playing";
   room.finished = null;
   resetAnswers(room);
@@ -156,7 +158,7 @@ function finishWithMistake(room: RoomInternal, failedPlayerName: string, correct
   room.stage = null;
   room.finished = {
     outcome: "mistake",
-    headline: `Partida cerrada: falló ${failedPlayerName}`,
+    headline: `${failedPlayerName} activó la alarma`,
     explanation,
     failedPlayerName,
     correctAnswer,
@@ -173,12 +175,13 @@ function finishWithMistake(room: RoomInternal, failedPlayerName: string, correct
   };
 }
 
-export function createRoom(playerName: string, miniGameId: string, socketId: string) {
+export function createRoom(playerName: string, difficulty: DifficultyLevel, socketId: string) {
   let code = randomCode();
   while (rooms.has(code)) {
     code = randomCode();
   }
 
+  const selectedDifficulty = DIFFICULTY_OPTIONS.some((item) => item.id === difficulty) ? difficulty : "explorador";
   const playerId = randomPlayerId();
   const room: RoomInternal = {
     code,
@@ -198,7 +201,7 @@ export function createRoom(playerName: string, miniGameId: string, socketId: str
       ],
     ]),
     phase: "lobby",
-    selectedMiniGameId: miniGamesById.has(miniGameId) ? miniGameId : MINI_GAME_CATALOG[0].id,
+    selectedDifficulty,
     currentStageIndex: 0,
     stage: null,
     submissions: new Map(),
@@ -264,8 +267,6 @@ export function getRoom(code: string) {
 }
 
 export function toRoomState(room: RoomInternal): RoomState {
-  const selectedMiniGame = MINI_GAME_CATALOG.find((item) => item.id === room.selectedMiniGameId)!;
-
   return {
     code: room.code,
     phase: room.phase,
@@ -280,11 +281,12 @@ export function toRoomState(room: RoomInternal): RoomState {
         answeredCurrentStage: player.answeredCurrentStage,
       }),
     ),
-    selectedMiniGameId: room.selectedMiniGameId,
-    selectedMiniGame,
-    availableMiniGames: MINI_GAME_CATALOG,
+    gameTitle: GAME_TITLE,
+    gameSubtitle: GAME_SUBTITLE,
+    selectedDifficulty: room.selectedDifficulty,
+    availableDifficulties: DIFFICULTY_OPTIONS,
     currentStageNumber: room.phase === "playing" ? room.currentStageIndex + 1 : room.currentStageIndex,
-    totalStages: getCurrentMiniGame(room).stages.length,
+    totalStages: getStages(room).length,
     stage: toStagePublic(room.stage),
     finished: room.finished,
     winners: computeWinners(room),
@@ -366,12 +368,12 @@ export function markDisconnected(socketId: string) {
   return null;
 }
 
-export function configureGame(room: RoomInternal, miniGameId: string) {
-  if (!miniGamesById.has(miniGameId)) {
-    return { error: "Ese minijuego no existe." };
+export function configureGame(room: RoomInternal, difficulty: DifficultyLevel) {
+  if (!DIFFICULTY_OPTIONS.some((item) => item.id === difficulty)) {
+    return { error: "Esa dificultad no existe." };
   }
 
-  room.selectedMiniGameId = miniGameId;
+  room.selectedDifficulty = difficulty;
   room.phase = "lobby";
   room.currentStageIndex = 0;
   room.stage = null;

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { PlayerPublic, RoomState } from "@shared/game";
+import { DifficultyLevel, PlayerPublic, RoomState } from "@shared/game";
 import { HomeScreen } from "./components/HomeScreen";
 import { LobbyScreen } from "./components/LobbyScreen";
 import { RoundScreen } from "./components/RoundScreen";
@@ -95,9 +95,9 @@ function App() {
     [playerId, room?.players],
   );
 
-  const createRoom = (playerName: string, miniGameId: string) => {
+  const createRoom = (playerName: string, difficulty: DifficultyLevel) => {
     setError(null);
-    socket.emit("room:create", { playerName, miniGameId }, (response) => {
+    socket.emit("room:create", { playerName, difficulty }, (response) => {
       if (!response.ok || !response.playerId) {
         setError(response.error ?? "No se pudo crear la sala.");
         return;
@@ -130,12 +130,12 @@ function App() {
     });
   }, [me, playerId, room]);
 
-  const configureGame = (miniGameId: string) => {
+  const configureGame = (difficulty: DifficultyLevel) => {
     if (!room) {
       return;
     }
     setError(null);
-    socket.emit("game:configure", { roomCode: room.code, miniGameId });
+    socket.emit("game:configure", { roomCode: room.code, difficulty });
   };
 
   const startGame = () => {
@@ -179,7 +179,7 @@ function App() {
       <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-sm uppercase tracking-[0.4em] text-gold/75">UNASLETAS AMANDA BLACK</p>
-          <h1 className="mt-2 font-display text-3xl text-parchment md:text-4xl">Drones al rescate</h1>
+          <h1 className="mt-2 font-display text-3xl text-parchment md:text-4xl">{room.gameTitle}</h1>
         </div>
         <div className="flex flex-wrap gap-3 text-sm text-mist/70">
           <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2">Sala {room.code}</div>
