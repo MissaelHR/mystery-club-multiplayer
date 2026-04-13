@@ -37,7 +37,7 @@ export function Scoreboard({ players, revealResults, winners }: ScoreboardProps)
               </div>
               {reveal ? (
                 <p className="mt-2 text-sm text-mist/75">
-                  {reveal.isCorrect ? `+${reveal.pointsEarned} en esta ronda` : "Sin puntos en esta ronda"}
+                  {reveal.isCorrect ? `+${reveal.pointsEarned} en esta partida` : "Error en la partida"}
                 </p>
               ) : null}
             </div>

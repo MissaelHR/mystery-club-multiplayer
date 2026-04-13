@@ -16,10 +16,10 @@ export function RoundScreen({ room, me, onSubmit }: RoundScreenProps) {
 
   useEffect(() => {
     setAnswer("");
-  }, [room.currentRoundIndex, room.phase]);
+  }, [room.phase, room.selectedChallengeId]);
 
   useEffect(() => {
-    if (!round || round.type !== "memory-challenge" || !round.memoryRevealMs) {
+    if (!round || round.challengeType !== "memoria-flash" || !round.memoryRevealMs) {
       setMemoryVisible(true);
       return;
     }
@@ -48,9 +48,10 @@ export function RoundScreen({ room, me, onSubmit }: RoundScreenProps) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-sm uppercase tracking-[0.35em] text-gold/75">
-            Ronda {room.currentRoundIndex} de {room.totalRounds}
+            Capítulo {round.chapterNumber} · {round.challengeType.replace("-", " ")}
           </p>
-          <h2 className="mt-3 font-display text-4xl text-parchment">{round.title}</h2>
+          <h2 className="mt-3 font-display text-4xl text-parchment">{round.chapterTitle}</h2>
+          <p className="mt-2 text-lg text-mist/80">{round.minigameTitle}</p>
         </div>
         <div className="rounded-2xl border border-gold/25 bg-gold/10 px-5 py-3 text-right">
           <p className="text-xs uppercase tracking-[0.25em] text-gold/75">Tiempo restante</p>
@@ -60,11 +61,11 @@ export function RoundScreen({ room, me, onSubmit }: RoundScreenProps) {
 
       <div className="mt-8 space-y-6">
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-          <p className="text-sm uppercase tracking-[0.3em] text-mist/50">{round.type.replace("-", " ")}</p>
+          <p className="text-sm uppercase tracking-[0.3em] text-mist/50">{round.minigameTitle}</p>
           <p className="mt-3 text-lg leading-8 text-mist/90">{round.storyText}</p>
         </div>
 
-        {round.type === "memory-challenge" && round.memorySequence ? (
+        {round.challengeType === "memoria-flash" && round.memorySequence ? (
           <div className="rounded-3xl border border-gold/25 bg-gold/10 p-6">
             <p className="text-sm uppercase tracking-[0.25em] text-gold/75">Ventana de memoria</p>
             {memoryVisible ? (
@@ -120,11 +121,14 @@ export function RoundScreen({ room, me, onSubmit }: RoundScreenProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
-            <button className="rounded-2xl bg-gold px-6 py-3 font-semibold text-slate-950 transition hover:bg-amber-300">
+            <button
+              disabled={submittedAlready}
+              className="rounded-2xl bg-gold px-6 py-3 font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:bg-slate-500"
+            >
               Confirmar respuesta
             </button>
             <p className="text-sm text-mist/70">
-              Cada respuesta correcta da 100 puntos, más hasta 60 puntos extra por velocidad.
+              Si alguien falla, la partida se cierra. Las respuestas correctas suman puntos al instante.
             </p>
             {submittedAlready ? <p className="text-sm text-gold/80">Respuesta recibida.</p> : null}
           </div>

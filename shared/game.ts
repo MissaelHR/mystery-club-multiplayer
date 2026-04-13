@@ -1,16 +1,10 @@
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 6;
-export const TOTAL_ROUNDS = 5;
 export const ROOM_TTL_MS = 30 * 60 * 1000;
-export const ROUND_REVEAL_MS = 9000;
 
-export type GamePhase = "lobby" | "question" | "reveal" | "finished";
-export type ChallengeType =
-  | "clue-selection"
-  | "code-deciphering"
-  | "memory-challenge"
-  | "pattern-lock"
-  | "final-deduction";
+export type GamePhase = "lobby" | "question" | "finished";
+export type ChallengeType = "pista-relampago" | "memoria-flash" | "decision-secreta";
+export type RevealOutcome = "victory" | "mistake" | "timeout";
 
 export interface PlayerPublic {
   id: string;
@@ -20,10 +14,16 @@ export interface PlayerPublic {
   connected: boolean;
 }
 
-export interface RoundDefinition {
+export interface ChallengeCatalogItem {
   id: string;
-  type: ChallengeType;
-  title: string;
+  chapterNumber: number;
+  chapterTitle: string;
+  challengeType: ChallengeType;
+  minigameTitle: string;
+  teaser: string;
+}
+
+export interface RoundDefinition extends ChallengeCatalogItem {
   storyText: string;
   prompt: string;
   inputLabel: string;
@@ -36,10 +36,7 @@ export interface RoundDefinition {
   memoryRevealMs?: number;
 }
 
-export interface RoundPublic {
-  id: string;
-  type: ChallengeType;
-  title: string;
+export interface RoundPublic extends ChallengeCatalogItem {
   storyText: string;
   prompt: string;
   inputLabel: string;
@@ -62,8 +59,11 @@ export interface PlayerRoundResult {
 }
 
 export interface RoundReveal {
+  outcome: RevealOutcome;
+  headline: string;
   correctAnswer: string;
   explanation: string;
+  finishedByPlayerName?: string;
   results: PlayerRoundResult[];
 }
 
@@ -78,8 +78,9 @@ export interface RoomState {
   phase: GamePhase;
   hostId: string;
   players: PlayerPublic[];
-  currentRoundIndex: number;
-  totalRounds: number;
+  availableChallenges: ChallengeCatalogItem[];
+  selectedChallengeId: string | null;
+  selectedChallenge: ChallengeCatalogItem | null;
   round: RoundPublic | null;
   reveal: RoundReveal | null;
   submittedPlayerIds: string[];
@@ -107,6 +108,19 @@ export interface SubmitAnswerPayload {
   answer: string;
 }
 
+export interface ConfigureGamePayload {
+  roomCode: string;
+  challengeId: string;
+}
+
+export interface StartGamePayload {
+  roomCode: string;
+}
+
+export interface RestartGamePayload {
+  roomCode: string;
+}
+
 export interface ServerToClientEvents {
   "room:update": (room: RoomState) => void;
   "room:error": (message: string) => void;
@@ -122,6 +136,8 @@ export interface ClientToServerEvents {
     callback: (response: JoinRoomResponse) => void,
   ) => void;
   "room:leave": (payload: { roomCode: string }) => void;
-  "game:start": (payload: { roomCode: string }) => void;
+  "game:configure": (payload: ConfigureGamePayload) => void;
+  "game:start": (payload: StartGamePayload) => void;
+  "game:restart": (payload: RestartGamePayload) => void;
   "round:submit": (payload: SubmitAnswerPayload) => void;
 }

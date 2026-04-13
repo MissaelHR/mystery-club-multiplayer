@@ -6,12 +6,14 @@ import {
   ServerToClientEvents,
 } from "../../../shared/game";
 import {
+  configureGame,
   createRoom,
   expireInactiveRooms,
   getRoom,
   joinRoom,
   leaveRoom,
   markDisconnected,
+  restartGame,
   startGame,
   submitAnswer,
   toRoomState,
@@ -92,6 +94,27 @@ export function registerSocketHandlers(io: MysteryServer) {
       }
     });
 
+    socket.on("game:configure", ({ roomCode, challengeId }) => {
+      const room = getRoom(roomCode);
+      if (!room) {
+        emitError(socket, "Sala no encontrada.");
+        return;
+      }
+
+      if (room.hostId !== socket.id) {
+        emitError(socket, "Solo el anfitrión puede elegir capítulo y minijuego.");
+        return;
+      }
+
+      const result = configureGame(room, challengeId);
+      if ("error" in result && result.error) {
+        emitError(socket, result.error);
+        return;
+      }
+
+      emitRoom(io, room.code);
+    });
+
     socket.on("game:start", ({ roomCode }) => {
       const room = getRoom(roomCode);
       if (!room) {
@@ -110,6 +133,22 @@ export function registerSocketHandlers(io: MysteryServer) {
         return;
       }
 
+      emitRoom(io, room.code);
+    });
+
+    socket.on("game:restart", ({ roomCode }) => {
+      const room = getRoom(roomCode);
+      if (!room) {
+        emitError(socket, "Sala no encontrada.");
+        return;
+      }
+
+      if (room.hostId !== socket.id) {
+        emitError(socket, "Solo el anfitrión puede reiniciar la partida.");
+        return;
+      }
+
+      restartGame(room);
       emitRoom(io, room.code);
     });
 

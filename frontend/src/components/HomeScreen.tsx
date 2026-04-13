@@ -25,29 +25,29 @@ export function HomeScreen({ error, onCreateRoom, onJoinRoom }: HomeScreenProps)
     <div className="mx-auto grid min-h-screen max-w-6xl gap-8 px-6 py-10 lg:grid-cols-[1.2fr_0.8fr]">
       <section className="flex flex-col justify-between rounded-[2rem] border border-gold/20 bg-slate-950/60 p-8 shadow-glow backdrop-blur-xl">
         <div className="space-y-6">
-          <p className="text-sm uppercase tracking-[0.4em] text-gold/80">Club del Misterio</p>
+          <p className="text-sm uppercase tracking-[0.4em] text-gold/80">UNASLETAS A LA PAGINA</p>
           <div className="space-y-4">
             <h1 className="max-w-2xl font-display text-5xl leading-tight text-parchment md:text-6xl">
-              Reúne a tu equipo y resuelve el caso oculto de la mansión en cinco rondas en vivo.
+              El anfitrión elige capítulo, minijuego y misión. Todos compiten en directo por sobrevivir a la página.
             </h1>
             <p className="max-w-xl text-lg leading-8 text-mist/80">
-              Crea una sala privada, invita de 2 a 6 jugadores, sigue pistas en tiempo real y compite por
-              la puntuación más alta.
+              Crea una sala privada, invita de 2 a 6 jugadores y juega retos inspirados en los capítulos
+              20 al 29. Si alguien falla, la partida se cierra y el anfitrión decide el siguiente reto.
             </p>
           </div>
         </div>
         <div className="mt-10 grid gap-4 text-sm text-mist/75 md:grid-cols-3">
           <div className="panel p-4">
-            <p className="font-semibold text-parchment">5 rondas originales</p>
-            <p className="mt-2">Pistas, claves, memoria y una deducción final.</p>
+            <p className="font-semibold text-parchment">Capítulos 20 al 29</p>
+            <p className="mt-2">Cada capítulo ofrece 3 minijuegos distintos para elegir.</p>
           </div>
           <div className="panel p-4">
-            <p className="font-semibold text-parchment">Puntuación en tiempo real</p>
-            <p className="mt-2">Las respuestas correctas suman puntos y la velocidad añade bonificación.</p>
+            <p className="font-semibold text-parchment">Partida de alto riesgo</p>
+            <p className="mt-2">Un error cierra la misión. La velocidad y los aciertos suman puntos.</p>
           </div>
           <div className="panel p-4">
-            <p className="font-semibold text-parchment">Atmósfera original</p>
-            <p className="mt-2">Una aventura de misterio inédita, sin usar material de libros existentes.</p>
+            <p className="font-semibold text-parchment">Mando del anfitrión</p>
+            <p className="mt-2">El anfitrión selecciona capítulo, reto y reinicio de la sala.</p>
           </div>
         </div>
       </section>

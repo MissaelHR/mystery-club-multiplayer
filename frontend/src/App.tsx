@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { PlayerPublic, RoomState } from "@shared/game";
 import { HomeScreen } from "./components/HomeScreen";
 import { LobbyScreen } from "./components/LobbyScreen";
-import { RevealScreen } from "./components/RevealScreen";
 import { RoundScreen } from "./components/RoundScreen";
 import { Scoreboard } from "./components/Scoreboard";
 import { WinnerScreen } from "./components/WinnerScreen";
@@ -70,6 +69,22 @@ function App() {
     socket.emit("game:start", { roomCode: room.code });
   };
 
+  const configureGame = (challengeId: string) => {
+    if (!room) {
+      return;
+    }
+    setError(null);
+    socket.emit("game:configure", { roomCode: room.code, challengeId });
+  };
+
+  const restartGame = () => {
+    if (!room) {
+      return;
+    }
+    setError(null);
+    socket.emit("game:restart", { roomCode: room.code });
+  };
+
   const submitAnswer = (answer: string) => {
     if (!room) {
       return;
@@ -86,8 +101,8 @@ function App() {
     <main className="mx-auto min-h-screen max-w-7xl px-6 py-8">
       <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm uppercase tracking-[0.4em] text-gold/75">Club del Misterio</p>
-          <h1 className="mt-2 font-display text-4xl text-parchment">Mansión Moonquill</h1>
+          <p className="text-sm uppercase tracking-[0.4em] text-gold/75">UNASLETAS A LA PAGINA</p>
+          <h1 className="mt-2 font-display text-4xl text-parchment">Retos Black en vivo</h1>
         </div>
         <div className="flex flex-wrap gap-3 text-sm text-mist/70">
           <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2">Sala {room.code}</div>
@@ -106,22 +121,24 @@ function App() {
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
         <div>
-          {room.phase === "lobby" ? <LobbyScreen room={room} me={me} onStart={startGame} /> : null}
+          {room.phase === "lobby" ? (
+            <LobbyScreen room={room} me={me} onConfigure={configureGame} onStart={startGame} />
+          ) : null}
           {room.phase === "question" ? <RoundScreen room={room} me={me} onSubmit={submitAnswer} /> : null}
-          {room.phase === "reveal" ? <RevealScreen room={room} /> : null}
-          {room.phase === "finished" ? <WinnerScreen winners={room.winners} /> : null}
+          {room.phase === "finished" ? <WinnerScreen room={room} me={me} onRestart={restartGame} /> : null}
         </div>
 
         <div className="space-y-6">
           <Scoreboard players={room.players} revealResults={room.reveal?.results} winners={room.winners} />
           <section className="panel p-5">
-            <h3 className="font-display text-2xl text-parchment">Cómo funciona la puntuación</h3>
+            <h3 className="font-display text-2xl text-parchment">Modo de juego</h3>
             <p className="mt-4 leading-7 text-mist/80">
-              Cada respuesta correcta otorga 100 puntos. Las respuestas correctas más rápidas consiguen
-              hasta 60 puntos extra, así que pensar rápido importa.
+              El anfitrión elige un capítulo del 20 al 29 y uno de sus tres minijuegos. Si alguien responde
+              mal, la partida se cierra de inmediato.
             </p>
             <p className="mt-3 leading-7 text-mist/70">
-              Las salas se guardan en memoria y expiran automáticamente tras 30 minutos de inactividad.
+              Las respuestas correctas suman 100 puntos más bonificación por velocidad. El marcador se ve
+              siempre y solo el anfitrión puede reiniciar la siguiente partida.
             </p>
           </section>
         </div>
