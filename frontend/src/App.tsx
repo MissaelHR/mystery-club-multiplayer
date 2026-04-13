@@ -51,6 +51,12 @@ function App() {
       setPlayerId(null);
       setError(message);
     };
+    const handleClosed = (message: string) => {
+      clearSession();
+      setRoom(null);
+      setPlayerId(null);
+      setError(message);
+    };
     const handleConnectError = () => {
       setError("No se pudo conectar con el servidor del juego.");
     };
@@ -74,6 +80,7 @@ function App() {
     socket.on("room:update", handleRoom);
     socket.on("room:error", handleError);
     socket.on("room:kicked", handleKicked);
+    socket.on("room:closed", handleClosed);
     socket.on("connect_error", handleConnectError);
     socket.on("connect", tryResume);
 
@@ -85,6 +92,7 @@ function App() {
       socket.off("room:update", handleRoom);
       socket.off("room:error", handleError);
       socket.off("room:kicked", handleKicked);
+      socket.off("room:closed", handleClosed);
       socket.off("connect_error", handleConnectError);
       socket.off("connect", tryResume);
     };
@@ -95,9 +103,9 @@ function App() {
     [playerId, room?.players],
   );
 
-  const createRoom = (playerName: string, difficulty: DifficultyLevel) => {
+  const createRoom = (playerName: string, difficulty: DifficultyLevel, password: string) => {
     setError(null);
-    socket.emit("room:create", { playerName, difficulty }, (response) => {
+    socket.emit("room:create", { playerName, difficulty, password }, (response) => {
       if (!response.ok || !response.playerId) {
         setError(response.error ?? "No se pudo crear la sala.");
         return;
@@ -193,6 +201,14 @@ function App() {
     socket.emit("room:kick", { roomCode: room.code, targetPlayerId });
   };
 
+  const closeRoom = () => {
+    if (!room) {
+      return;
+    }
+    setError(null);
+    socket.emit("room:close", { roomCode: room.code });
+  };
+
   if (!room) {
     return <HomeScreen error={error} onCreateRoom={createRoom} onJoinRoom={joinRoom} />;
   }
@@ -215,6 +231,15 @@ function App() {
             {room.selectedDifficulty}
           </div>
           {me ? <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-center">{me.name}</div> : null}
+          {me?.isHost ? (
+            <button
+              type="button"
+              onClick={closeRoom}
+              className="rounded-full border border-rose-300/30 bg-rose-500/10 px-4 py-2 text-center font-semibold text-rose-100 transition hover:bg-rose-500/20"
+            >
+              Cerrar sala
+            </button>
+          ) : null}
         </div>
       </header>
 

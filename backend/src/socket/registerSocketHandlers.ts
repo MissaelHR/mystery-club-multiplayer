@@ -8,6 +8,7 @@ import {
 import {
   addDrawingStroke,
   clearDrawing,
+  closeRoom,
   configureGame,
   createRoom,
   endGame,
@@ -81,7 +82,13 @@ export function registerSocketHandlers(io: MysteryServer) {
         return;
       }
 
-      const { room, playerId } = createRoom(payload.playerName, payload.difficulty, socket.id);
+      const result = createRoom(payload.playerName, payload.difficulty, socket.id, payload.password);
+      if ("error" in result) {
+        callback({ ok: false, error: result.error });
+        return;
+      }
+
+      const { room, playerId } = result;
       socket.join(room.code);
       callback({
         ok: true,
@@ -120,6 +127,30 @@ export function registerSocketHandlers(io: MysteryServer) {
       socket.join(room.code);
       callback({ ok: true, playerId });
       emitRoom(io, room.code);
+    });
+
+    socket.on("room:close", ({ roomCode }) => {
+      const room = getRoom(roomCode);
+      if (!room) {
+        emitError(socket, "Sala no encontrada.");
+        return;
+      }
+
+      if (room.hostId !== findPlayerIdBySocket(roomCode, socket.id)) {
+        emitError(socket, "Solo el anfitrión puede cerrar la sala.");
+        return;
+      }
+
+      const result = closeRoom(roomCode);
+      if (!("closedSocketIds" in result)) {
+        emitError(socket, result.error);
+        return;
+      }
+
+      result.closedSocketIds.forEach((socketId) => {
+        io.to(socketId).emit("room:closed", "El anfitrión cerró la sala.");
+        io.sockets.sockets.get(socketId)?.leave(roomCode);
+      });
     });
 
     socket.on("room:leave", ({ roomCode }) => {

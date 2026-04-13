@@ -1,6 +1,7 @@
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 6;
 export const ROOM_TTL_MS = 30 * 60 * 1000;
+export const ROOM_CREATE_PASSWORD = "unasletas";
 export const GAME_TITLE = "UNASLETAS AMANDA BLACK";
 export const GAME_SUBTITLE = "Crucigramas, rutas ocultas, dibujos y memorias en una mision cooperativa.";
 
@@ -148,6 +149,7 @@ export interface RoomState {
 export interface CreateRoomPayload {
   playerName: string;
   difficulty: DifficultyLevel;
+  password: string;
 }
 
 export interface JoinRoomPayload {
@@ -195,6 +197,7 @@ export interface ServerToClientEvents {
   "room:update": (room: RoomState) => void;
   "room:error": (message: string) => void;
   "room:kicked": (message: string) => void;
+  "room:closed": (message: string) => void;
 }
 
 export interface ClientToServerEvents {
@@ -210,6 +213,7 @@ export interface ClientToServerEvents {
     payload: ResumeSessionPayload,
     callback: (response: JoinRoomResponse) => void,
   ) => void;
+  "room:close": (payload: RoomPayload) => void;
   "room:leave": (payload: RoomPayload) => void;
   "room:kick": (payload: KickPlayerPayload) => void;
   "game:configure": (payload: ConfigureGamePayload) => void;

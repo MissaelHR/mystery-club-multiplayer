@@ -1,15 +1,16 @@
 import { FormEvent, useState } from "react";
-import { DIFFICULTY_OPTIONS, GAME_SUBTITLE, GAME_TITLE, MINI_GAME_CATALOG } from "@shared/game";
+import { DIFFICULTY_OPTIONS, GAME_SUBTITLE, GAME_TITLE, MINI_GAME_CATALOG, ROOM_CREATE_PASSWORD } from "@shared/game";
 
 interface HomeScreenProps {
   error: string | null;
-  onCreateRoom: (playerName: string, difficulty: (typeof DIFFICULTY_OPTIONS)[number]["id"]) => void;
+  onCreateRoom: (playerName: string, difficulty: (typeof DIFFICULTY_OPTIONS)[number]["id"], password: string) => void;
   onJoinRoom: (playerName: string, roomCode: string) => void;
 }
 
 export function HomeScreen({ error, onCreateRoom, onJoinRoom }: HomeScreenProps) {
   const [createName, setCreateName] = useState("");
   const [difficulty, setDifficulty] = useState(DIFFICULTY_OPTIONS[0].id);
+  const [createPassword, setCreatePassword] = useState("");
   const [joinName, setJoinName] = useState("");
   const [roomCode, setRoomCode] = useState("");
 
@@ -17,7 +18,7 @@ export function HomeScreen({ error, onCreateRoom, onJoinRoom }: HomeScreenProps)
 
   const handleCreate = (event: FormEvent) => {
     event.preventDefault();
-    onCreateRoom(createName, difficulty);
+    onCreateRoom(createName, difficulty, createPassword);
   };
 
   const handleJoin = (event: FormEvent) => {
@@ -70,6 +71,16 @@ export function HomeScreen({ error, onCreateRoom, onJoinRoom }: HomeScreenProps)
               className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-base text-white outline-none transition focus:border-gold/50"
               placeholder="Amanda"
               maxLength={18}
+            />
+          </label>
+
+          <label className="mt-4 block text-sm text-mist/80">
+            Contraseña de anfitrión
+            <input
+              value={createPassword}
+              onChange={(event) => setCreatePassword(event.target.value)}
+              className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-base text-white outline-none transition focus:border-gold/50"
+              placeholder={ROOM_CREATE_PASSWORD}
             />
           </label>
 

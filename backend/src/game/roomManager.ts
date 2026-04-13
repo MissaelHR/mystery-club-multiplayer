@@ -9,6 +9,7 @@ import {
   MIN_PLAYERS,
   MiniGameType,
   PlayerPublic,
+  ROOM_CREATE_PASSWORD,
   ROOM_TTL_MS,
   RoomState,
   StageDefinition,
@@ -50,6 +51,7 @@ interface RoomInternal {
 
 type JoinRoomResult = { error: string } | { room: RoomInternal; playerId: string };
 type KickResult = { error: string } | { room: RoomInternal | null; kickedSocketId: string };
+type CloseRoomResult = { error: string } | { closedSocketIds: string[] };
 
 const DEFAULT_PLAYLIST: MiniGameType[] = ["crucigrama", "sopa", "dibujo", "memorama"];
 const rooms = new Map<string, RoomInternal>();
@@ -241,7 +243,11 @@ function startPreparedGame(room: RoomInternal) {
   advanceStage(room);
 }
 
-export function createRoom(playerName: string, difficulty: DifficultyLevel, socketId: string) {
+export function createRoom(playerName: string, difficulty: DifficultyLevel, socketId: string, password: string) {
+  if (password.trim().toLowerCase() !== ROOM_CREATE_PASSWORD) {
+    return { error: "Contraseña incorrecta para crear la sala." };
+  }
+
   let code = randomCode();
   while (rooms.has(code)) {
     code = randomCode();
@@ -414,6 +420,17 @@ export function kickPlayer(roomCode: string, targetPlayerId: string): KickResult
   const kickedSocketId = target.socketId;
   const nextRoom = leaveRoom(room.code, target.id);
   return { room: nextRoom, kickedSocketId };
+}
+
+export function closeRoom(roomCode: string): CloseRoomResult {
+  const room = getRoom(roomCode);
+  if (!room) {
+    return { error: "Sala no encontrada." };
+  }
+
+  const closedSocketIds = [...room.players.values()].map((player) => player.socketId);
+  rooms.delete(room.code);
+  return { closedSocketIds };
 }
 
 export function markDisconnected(socketId: string) {
