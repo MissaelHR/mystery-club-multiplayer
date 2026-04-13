@@ -43,6 +43,7 @@ interface RoomInternal {
   selectedDifficulty: DifficultyLevel;
   configuredMiniGames: MiniGameType[];
   stageQueue: StageDefinition[];
+  lastStageVariantIds: Partial<Record<DifficultyLevel, Partial<Record<MiniGameType, string>>>>;
   currentStageIndex: number;
   stage: StageDefinition | null;
   submissions: Map<string, Submission>;
@@ -235,7 +236,14 @@ function advanceStage(room: RoomInternal) {
 
 function startPreparedGame(room: RoomInternal) {
   const playerIds = [...room.players.values()].map((player) => player.id);
-  room.stageQueue = buildStageQueue(room.selectedDifficulty, room.configuredMiniGames, playerIds);
+  const queueBuild = buildStageQueue(
+    room.selectedDifficulty,
+    room.configuredMiniGames,
+    playerIds,
+    room.lastStageVariantIds[room.selectedDifficulty],
+  );
+  room.stageQueue = queueBuild.stages;
+  room.lastStageVariantIds[room.selectedDifficulty] = queueBuild.variantIds;
   room.currentStageIndex = 0;
   room.finished = null;
   for (const player of room.players.values()) {
@@ -277,6 +285,7 @@ export function createRoom(playerName: string, difficulty: DifficultyLevel, sock
     selectedDifficulty,
     configuredMiniGames: [...DEFAULT_PLAYLIST],
     stageQueue: [],
+    lastStageVariantIds: {},
     currentStageIndex: 0,
     stage: null,
     submissions: new Map(),

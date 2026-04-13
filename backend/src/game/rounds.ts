@@ -9,6 +9,7 @@ import {
 const brushPalette = ["#f8fafc", "#f59e0b", "#22d3ee", "#34d399", "#fb7185"];
 
 type WordPath = { word: string; cells: Array<[number, number]> };
+type Variant<T> = { id: string; config: T };
 type CrosswordConfig = {
   answer: string;
   clue: string;
@@ -17,6 +18,11 @@ type CrosswordConfig = {
   startCol: number;
   distractors: string[];
 };
+type DrawingConfig = {
+  prompt: string;
+  answerMode: "options" | "text";
+  options: string[];
+};
 type WordSearchConfig = {
   size: number;
   filler: string;
@@ -24,308 +30,606 @@ type WordSearchConfig = {
 };
 
 const crosswordByDifficulty = {
-  explorador: {
-    answer: "BRUJULA",
-    clue: "Instrumento basico para no perder el norte durante la primera busqueda.",
-    size: 10,
-    row: 4,
-    startCol: 1,
-    distractors: ["M", "A", "P", "A", "R", "U"],
-  },
-  agente: {
-    answer: "EXPEDIENTE",
-    clue: "Documento central del caso. Sin esta pieza, la investigacion queda incompleta.",
-    size: 13,
-    row: 6,
-    startCol: 1,
-    distractors: ["C", "L", "A", "V", "E", "R", "A", "S", "T", "R", "O"],
-  },
-  leyenda: {
-    answer: "CRIPTOLOGIA",
-    clue: "Disciplina necesaria para romper el mensaje final sin cometer un solo error de lectura.",
-    size: 14,
-    row: 7,
-    startCol: 1,
-    distractors: ["A", "N", "T", "I", "G", "U", "A", "R", "I", "O", "S", "M"],
-  },
-} satisfies Record<DifficultyLevel, CrosswordConfig>;
+  explorador: [
+    {
+      id: "cross-explorador-brujula",
+      config: {
+        answer: "BRUJULA",
+        clue: "Instrumento basico para no perder el norte durante la primera busqueda.",
+        size: 10,
+        row: 4,
+        startCol: 1,
+        distractors: ["M", "A", "P", "A", "R", "U"],
+      },
+    },
+    {
+      id: "cross-explorador-linterna",
+      config: {
+        answer: "LINTERNA",
+        clue: "Objeto esencial para explorar zonas oscuras sin depender de nadie.",
+        size: 11,
+        row: 5,
+        startCol: 1,
+        distractors: ["M", "A", "P", "A", "S", "R", "U"],
+      },
+    },
+  ],
+  agente: [
+    {
+      id: "cross-agente-expediente",
+      config: {
+        answer: "EXPEDIENTE",
+        clue: "Documento central del caso. Sin esta pieza, la investigacion queda incompleta.",
+        size: 13,
+        row: 6,
+        startCol: 1,
+        distractors: ["C", "L", "A", "V", "E", "R", "A", "S", "T", "R", "O"],
+      },
+    },
+    {
+      id: "cross-agente-bitacora",
+      config: {
+        answer: "BITACORA",
+        clue: "Registro donde un agente serio deja cada hallazgo, hora y cambio de ruta.",
+        size: 11,
+        row: 5,
+        startCol: 1,
+        distractors: ["A", "R", "C", "H", "I", "V", "O", "S", "L"],
+      },
+    },
+  ],
+  leyenda: [
+    {
+      id: "cross-leyenda-criptologia",
+      config: {
+        answer: "CRIPTOLOGIA",
+        clue: "Disciplina necesaria para romper el mensaje final sin cometer un solo error de lectura.",
+        size: 14,
+        row: 7,
+        startCol: 1,
+        distractors: ["A", "N", "T", "I", "G", "U", "A", "R", "I", "O", "S", "M"],
+      },
+    },
+    {
+      id: "cross-leyenda-astrolabio",
+      config: {
+        answer: "ASTROLABIO",
+        clue: "Instrumento complejo reservado para orientarse cuando ni el mapa basta.",
+        size: 13,
+        row: 6,
+        startCol: 1,
+        distractors: ["C", "R", "I", "P", "T", "A", "S", "N", "O", "M"],
+      },
+    },
+  ],
+} satisfies Record<DifficultyLevel, Array<Variant<CrosswordConfig>>>;
 
 const wordSearchByDifficulty = {
-  explorador: {
-    size: 6,
-    filler: "SOMBRANOCHE",
-    paths: [
-      {
-        word: "MAPA",
-        cells: [
-          [0, 0],
-          [0, 1],
-          [0, 2],
-          [0, 3],
+  explorador: [
+    {
+      id: "sopa-explorador-rastreo",
+      config: {
+        size: 6,
+        filler: "SOMBRANOCHE",
+        paths: [
+          {
+            word: "MAPA",
+            cells: [
+              [0, 0],
+              [0, 1],
+              [0, 2],
+              [0, 3],
+            ],
+          },
+          {
+            word: "LINTERNA",
+            cells: [
+              [1, 0],
+              [1, 1],
+              [1, 2],
+              [1, 3],
+              [1, 4],
+              [1, 5],
+              [2, 5],
+              [3, 5],
+            ],
+          },
+          {
+            word: "BRUJULA",
+            cells: [
+              [3, 0],
+              [3, 1],
+              [3, 2],
+              [3, 3],
+              [3, 4],
+              [4, 4],
+              [4, 3],
+            ],
+          },
+          {
+            word: "RUTA",
+            cells: [
+              [5, 0],
+              [5, 1],
+              [5, 2],
+              [5, 3],
+            ],
+          },
         ],
       },
-      {
-        word: "LINTERNA",
-        cells: [
-          [1, 0],
-          [1, 1],
-          [1, 2],
-          [1, 3],
-          [1, 4],
-          [1, 5],
-          [2, 5],
-          [3, 5],
+    },
+    {
+      id: "sopa-explorador-equipo",
+      config: {
+        size: 6,
+        filler: "LUCERNOCTE",
+        paths: [
+          {
+            word: "MOCHILA",
+            cells: [
+              [0, 0],
+              [0, 1],
+              [0, 2],
+              [1, 2],
+              [2, 2],
+              [2, 1],
+              [2, 0],
+            ],
+          },
+          {
+            word: "MAPA",
+            cells: [
+              [5, 0],
+              [5, 1],
+              [5, 2],
+              [5, 3],
+            ],
+          },
+          {
+            word: "LUPA",
+            cells: [
+              [4, 0],
+              [4, 1],
+              [4, 2],
+              [4, 3],
+            ],
+          },
+          {
+            word: "FOCO",
+            cells: [
+              [0, 5],
+              [1, 5],
+              [2, 5],
+              [3, 5],
+            ],
+          },
         ],
       },
-      {
-        word: "BRUJULA",
-        cells: [
-          [3, 0],
-          [3, 1],
-          [3, 2],
-          [3, 3],
-          [3, 4],
-          [4, 4],
-          [4, 3],
+    },
+  ],
+  agente: [
+    {
+      id: "sopa-agente-rastreo",
+      config: {
+        size: 8,
+        filler: "TRAMPASECRETAFALSOPASILLO",
+        paths: [
+          {
+            word: "CLAVE",
+            cells: [
+              [0, 0],
+              [0, 1],
+              [0, 2],
+              [0, 3],
+              [0, 4],
+            ],
+          },
+          {
+            word: "CODIGO",
+            cells: [
+              [1, 0],
+              [1, 1],
+              [1, 2],
+              [1, 3],
+              [2, 3],
+              [3, 3],
+            ],
+          },
+          {
+            word: "INDICIO",
+            cells: [
+              [2, 0],
+              [2, 1],
+              [2, 2],
+              [3, 2],
+              [4, 2],
+              [4, 3],
+              [4, 4],
+            ],
+          },
+          {
+            word: "ARCHIVO",
+            cells: [
+              [5, 0],
+              [5, 1],
+              [5, 2],
+              [5, 3],
+              [5, 4],
+              [6, 4],
+              [7, 4],
+            ],
+          },
+          {
+            word: "MENSAJE",
+            cells: [
+              [7, 0],
+              [6, 0],
+              [6, 1],
+              [6, 2],
+              [6, 3],
+              [7, 3],
+              [7, 2],
+            ],
+          },
+          {
+            word: "RASTRO",
+            cells: [
+              [3, 7],
+              [4, 7],
+              [5, 7],
+              [5, 6],
+              [5, 5],
+              [4, 5],
+            ],
+          },
         ],
       },
-      {
-        word: "RUTA",
-        cells: [
-          [5, 0],
-          [5, 1],
-          [5, 2],
-          [5, 3],
+    },
+    {
+      id: "sopa-agente-analisis",
+      config: {
+        size: 8,
+        filler: "FALSACARPETAVIGILANCIA",
+        paths: [
+          {
+            word: "CLAVE",
+            cells: [
+              [0, 0],
+              [0, 1],
+              [0, 2],
+              [0, 3],
+              [0, 4],
+            ],
+          },
+          {
+            word: "PRUEBA",
+            cells: [
+              [1, 0],
+              [1, 1],
+              [1, 2],
+              [2, 2],
+              [3, 2],
+              [3, 1],
+            ],
+          },
+          {
+            word: "DOSSIER",
+            cells: [
+              [7, 0],
+              [6, 0],
+              [5, 0],
+              [5, 1],
+              [5, 2],
+              [6, 2],
+              [7, 2],
+            ],
+          },
+          {
+            word: "SELLO",
+            cells: [
+              [0, 7],
+              [1, 7],
+              [2, 7],
+              [2, 6],
+              [2, 5],
+            ],
+          },
+          {
+            word: "RUMOR",
+            cells: [
+              [7, 7],
+              [6, 7],
+              [6, 6],
+              [6, 5],
+              [7, 5],
+            ],
+          },
         ],
       },
-    ],
-  },
-  agente: {
-    size: 8,
-    filler: "TRAMPASECRETAFALSOPASILLO",
-    paths: [
-      {
-        word: "CLAVE",
-        cells: [
-          [0, 0],
-          [0, 1],
-          [0, 2],
-          [0, 3],
-          [0, 4],
+    },
+  ],
+  leyenda: [
+    {
+      id: "sopa-leyenda-umbral",
+      config: {
+        size: 10,
+        filler: "NOCTURNASECRETAUMBRASOMBRAENCLAVE",
+        paths: [
+          {
+            word: "LABERINTO",
+            cells: [
+              [0, 0],
+              [0, 1],
+              [0, 2],
+              [0, 3],
+              [1, 3],
+              [2, 3],
+              [2, 4],
+              [2, 5],
+              [2, 6],
+            ],
+          },
+          {
+            word: "RELIQUIA",
+            cells: [
+              [0, 9],
+              [1, 9],
+              [2, 9],
+              [3, 9],
+              [3, 8],
+              [3, 7],
+              [3, 6],
+              [3, 5],
+            ],
+          },
+          {
+            word: "PASADIZO",
+            cells: [
+              [4, 0],
+              [4, 1],
+              [4, 2],
+              [4, 3],
+              [5, 3],
+              [6, 3],
+              [6, 2],
+              [6, 1],
+            ],
+          },
+          {
+            word: "ACERTIJO",
+            cells: [
+              [5, 9],
+              [5, 8],
+              [5, 7],
+              [5, 6],
+              [6, 6],
+              [7, 6],
+              [7, 7],
+              [7, 8],
+            ],
+          },
+          {
+            word: "PORTAL",
+            cells: [
+              [9, 0],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [9, 2],
+              [9, 3],
+            ],
+          },
+          {
+            word: "UMBRAL",
+            cells: [
+              [9, 9],
+              [8, 9],
+              [8, 8],
+              [8, 7],
+              [9, 7],
+              [9, 6],
+            ],
+          },
+          {
+            word: "ENIGMA",
+            cells: [
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [7, 3],
+              [7, 4],
+              [6, 4],
+            ],
+          },
+          {
+            word: "RUNAS",
+            cells: [
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [2, 8],
+              [2, 7],
+            ],
+          },
         ],
       },
-      {
-        word: "CODIGO",
-        cells: [
-          [1, 0],
-          [1, 1],
-          [1, 2],
-          [1, 3],
-          [2, 3],
-          [3, 3],
+    },
+    {
+      id: "sopa-leyenda-cripta",
+      config: {
+        size: 10,
+        filler: "MISTERIOSANTUARIOPENUMBRA",
+        paths: [
+          {
+            word: "PERGAMINO",
+            cells: [
+              [0, 0],
+              [0, 1],
+              [0, 2],
+              [0, 3],
+              [1, 3],
+              [2, 3],
+              [2, 4],
+              [2, 5],
+              [2, 6],
+            ],
+          },
+          {
+            word: "AMULETO",
+            cells: [
+              [0, 9],
+              [1, 9],
+              [2, 9],
+              [3, 9],
+              [3, 8],
+              [3, 7],
+              [3, 6],
+            ],
+          },
+          {
+            word: "SANTUARIO",
+            cells: [
+              [4, 0],
+              [4, 1],
+              [4, 2],
+              [4, 3],
+              [5, 3],
+              [6, 3],
+              [6, 2],
+              [6, 1],
+              [6, 0],
+            ],
+          },
+          {
+            word: "MISTERIO",
+            cells: [
+              [5, 9],
+              [5, 8],
+              [5, 7],
+              [5, 6],
+              [6, 6],
+              [7, 6],
+              [7, 7],
+              [7, 8],
+            ],
+          },
+          {
+            word: "PORTAL",
+            cells: [
+              [9, 0],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [9, 2],
+              [9, 3],
+            ],
+          },
+          {
+            word: "CRIPTA",
+            cells: [
+              [9, 9],
+              [8, 9],
+              [8, 8],
+              [8, 7],
+              [9, 7],
+              [9, 6],
+            ],
+          },
+          {
+            word: "RUNAS",
+            cells: [
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [2, 8],
+              [2, 7],
+            ],
+          },
         ],
       },
-      {
-        word: "INDICIO",
-        cells: [
-          [2, 0],
-          [2, 1],
-          [2, 2],
-          [3, 2],
-          [4, 2],
-          [4, 3],
-          [4, 4],
-        ],
-      },
-      {
-        word: "ARCHIVO",
-        cells: [
-          [5, 0],
-          [5, 1],
-          [5, 2],
-          [5, 3],
-          [5, 4],
-          [6, 4],
-          [7, 4],
-        ],
-      },
-      {
-        word: "MENSAJE",
-        cells: [
-          [7, 0],
-          [6, 0],
-          [6, 1],
-          [6, 2],
-          [6, 3],
-          [7, 3],
-          [7, 2],
-        ],
-      },
-      {
-        word: "RASTRO",
-        cells: [
-          [3, 7],
-          [4, 7],
-          [5, 7],
-          [5, 6],
-          [5, 5],
-          [4, 5],
-        ],
-      },
-    ],
-  },
-  leyenda: {
-    size: 10,
-    filler: "NOCTURNASECRETAUMBRASOMBRAENCLAVE",
-    paths: [
-      {
-        word: "LABERINTO",
-        cells: [
-          [0, 0],
-          [0, 1],
-          [0, 2],
-          [0, 3],
-          [1, 3],
-          [2, 3],
-          [2, 4],
-          [2, 5],
-          [2, 6],
-        ],
-      },
-      {
-        word: "RELIQUIA",
-        cells: [
-          [0, 9],
-          [1, 9],
-          [2, 9],
-          [3, 9],
-          [3, 8],
-          [3, 7],
-          [3, 6],
-          [3, 5],
-        ],
-      },
-      {
-        word: "PASADIZO",
-        cells: [
-          [4, 0],
-          [4, 1],
-          [4, 2],
-          [4, 3],
-          [5, 3],
-          [6, 3],
-          [6, 2],
-          [6, 1],
-        ],
-      },
-      {
-        word: "ACERTIJO",
-        cells: [
-          [5, 9],
-          [5, 8],
-          [5, 7],
-          [5, 6],
-          [6, 6],
-          [7, 6],
-          [7, 7],
-          [7, 8],
-        ],
-      },
-      {
-        word: "PORTAL",
-        cells: [
-          [9, 0],
-          [8, 0],
-          [8, 1],
-          [8, 2],
-          [9, 2],
-          [9, 3],
-        ],
-      },
-      {
-        word: "UMBRAL",
-        cells: [
-          [9, 9],
-          [8, 9],
-          [8, 8],
-          [8, 7],
-          [9, 7],
-          [9, 6],
-        ],
-      },
-      {
-        word: "ENIGMA",
-        cells: [
-          [7, 0],
-          [7, 1],
-          [7, 2],
-          [7, 3],
-          [7, 4],
-          [6, 4],
-        ],
-      },
-      {
-        word: "RUNAS",
-        cells: [
-          [1, 6],
-          [1, 7],
-          [1, 8],
-          [2, 8],
-          [2, 7],
-        ],
-      },
-    ],
-  },
-} satisfies Record<DifficultyLevel, WordSearchConfig>;
+    },
+  ],
+} satisfies Record<DifficultyLevel, Array<Variant<WordSearchConfig>>>;
 
-const drawingByDifficulty = {
-  explorador: {
-    prompt: "Linterna",
-    answerMode: "options",
-    options: ["Linterna", "Brújula", "Mapa", "Mochila"],
-  },
-  agente: {
-    prompt: "Candado antiguo",
-    answerMode: "options",
-    options: ["Candado antiguo", "Llave maestra", "Cofre sellado", "Archivo clasificado", "Reloj de arena", "Farol"],
-  },
-  leyenda: {
-    prompt: "Reloj de arena",
-    answerMode: "text",
-    options: [],
-  },
-} satisfies Record<DifficultyLevel, { prompt: string; answerMode: "options" | "text"; options: string[] }>;
+const drawingByDifficulty: Record<DifficultyLevel, Array<Variant<DrawingConfig>>> = {
+  explorador: [
+    { id: "draw-explorador-linterna", config: { prompt: "Linterna", answerMode: "options", options: ["Linterna", "Brújula", "Mapa", "Mochila"] } },
+    { id: "draw-explorador-botas", config: { prompt: "Botas", answerMode: "options", options: ["Botas", "Mochila", "Lupa", "Mapa"] } },
+  ],
+  agente: [
+    { id: "draw-agente-candado", config: { prompt: "Candado antiguo", answerMode: "options", options: ["Candado antiguo", "Llave maestra", "Cofre sellado", "Archivo clasificado", "Reloj de arena", "Farol"] } },
+    { id: "draw-agente-dossier", config: { prompt: "Dosier secreto", answerMode: "options", options: ["Dosier secreto", "Mapa cifrado", "Cinta magnetica", "Maletin de pruebas", "Carta rota", "Placa dorada"] } },
+  ],
+  leyenda: [
+    { id: "draw-leyenda-reloj", config: { prompt: "Reloj de arena", answerMode: "text", options: [] } },
+    { id: "draw-leyenda-amuleto", config: { prompt: "Amuleto antiguo", answerMode: "text", options: [] } },
+  ],
+};
 
 const memoryByDifficulty = {
   explorador: [
-    ["linterna", "🏮", "Linterna", "from-amber-300/40 to-gold/10"],
-    ["mapa", "🗺️", "Mapa", "from-emerald-300/40 to-teal-400/10"],
-    ["brujula", "🧭", "Brújula", "from-cyan-300/40 to-blue-400/10"],
-    ["mochila", "🎒", "Mochila", "from-indigo-400/40 to-sky-400/10"],
+    { id: "mem-explorador-kit", config: [
+      ["linterna", "🏮", "Linterna", "from-amber-300/40 to-gold/10"],
+      ["mapa", "🗺️", "Mapa", "from-emerald-300/40 to-teal-400/10"],
+      ["brujula", "🧭", "Brújula", "from-cyan-300/40 to-blue-400/10"],
+      ["mochila", "🎒", "Mochila", "from-indigo-400/40 to-sky-400/10"],
+    ]},
+    { id: "mem-explorador-campo", config: [
+      ["lupa", "🔎", "Lupa", "from-cyan-300/40 to-blue-400/10"],
+      ["botas", "🥾", "Botas", "from-amber-300/40 to-gold/10"],
+      ["cantimplora", "🧴", "Cantimplora", "from-emerald-300/40 to-teal-400/10"],
+      ["silbato", "📯", "Silbato", "from-indigo-400/40 to-sky-400/10"],
+    ]},
   ],
   agente: [
-    ["codigo", "🔐", "Código", "from-lime-300/40 to-emerald-400/10"],
-    ["llave", "🗝️", "Llave", "from-amber-300/40 to-gold/10"],
-    ["archivo", "🗂️", "Archivo", "from-emerald-300/40 to-teal-400/10"],
-    ["lupa", "🔎", "Lupa", "from-cyan-300/40 to-blue-400/10"],
-    ["mensaje", "✉️", "Mensaje", "from-fuchsia-300/40 to-rose-400/10"],
-    ["reloj", "⏰", "Reloj", "from-orange-300/40 to-amber-400/10"],
-    ["candado", "🧰", "Candado", "from-slate-300/40 to-slate-500/10"],
-    ["brujula", "🧭", "Brújula", "from-indigo-300/40 to-blue-500/10"],
+    { id: "mem-agente-expediente", config: [
+      ["codigo", "🔐", "Código", "from-lime-300/40 to-emerald-400/10"],
+      ["llave", "🗝️", "Llave", "from-amber-300/40 to-gold/10"],
+      ["archivo", "🗂️", "Archivo", "from-emerald-300/40 to-teal-400/10"],
+      ["lupa", "🔎", "Lupa", "from-cyan-300/40 to-blue-400/10"],
+      ["mensaje", "✉️", "Mensaje", "from-fuchsia-300/40 to-rose-400/10"],
+      ["reloj", "⏰", "Reloj", "from-orange-300/40 to-amber-400/10"],
+      ["candado", "🧰", "Candado", "from-slate-300/40 to-slate-500/10"],
+      ["brujula", "🧭", "Brújula", "from-indigo-300/40 to-blue-500/10"],
+    ]},
+    { id: "mem-agente-vigilancia", config: [
+      ["placa", "🪪", "Placa", "from-lime-300/40 to-emerald-400/10"],
+      ["dosier", "📁", "Dosier", "from-amber-300/40 to-gold/10"],
+      ["camara", "📷", "Cámara", "from-emerald-300/40 to-teal-400/10"],
+      ["radio", "📻", "Radio", "from-cyan-300/40 to-blue-400/10"],
+      ["sellado", "📦", "Paquete", "from-fuchsia-300/40 to-rose-400/10"],
+      ["cinta", "🎞️", "Cinta", "from-orange-300/40 to-amber-400/10"],
+      ["sello", "🪙", "Sello", "from-slate-300/40 to-slate-500/10"],
+      ["prueba", "🧪", "Prueba", "from-indigo-300/40 to-blue-500/10"],
+    ]},
   ],
   leyenda: [
-    ["reliquia", "💎", "Reliquia", "from-fuchsia-300/40 to-rose-400/10"],
-    ["runas", "📜", "Runas", "from-indigo-400/40 to-sky-400/10"],
-    ["mapa", "🗺️", "Mapa", "from-emerald-300/40 to-teal-400/10"],
-    ["portal", "🪞", "Portal", "from-cyan-300/40 to-blue-400/10"],
-    ["acertijo", "🧩", "Acertijo", "from-orange-300/40 to-amber-400/10"],
-    ["pasadizo", "🚪", "Pasadizo", "from-lime-300/40 to-emerald-400/10"],
-    ["candado", "🔐", "Candado", "from-lime-300/40 to-emerald-400/10"],
-    ["brujula", "🧭", "Brújula", "from-pink-300/40 to-fuchsia-400/10"],
-    ["amuleto", "🪬", "Amuleto", "from-slate-300/40 to-slate-500/10"],
-    ["archivo", "🗂️", "Archivo", "from-amber-300/40 to-orange-400/10"],
+    { id: "mem-leyenda-umbral", config: [
+      ["reliquia", "💎", "Reliquia", "from-fuchsia-300/40 to-rose-400/10"],
+      ["runas", "📜", "Runas", "from-indigo-400/40 to-sky-400/10"],
+      ["mapa", "🗺️", "Mapa", "from-emerald-300/40 to-teal-400/10"],
+      ["portal", "🪞", "Portal", "from-cyan-300/40 to-blue-400/10"],
+      ["acertijo", "🧩", "Acertijo", "from-orange-300/40 to-amber-400/10"],
+      ["pasadizo", "🚪", "Pasadizo", "from-lime-300/40 to-emerald-400/10"],
+      ["candado", "🔐", "Candado", "from-lime-300/40 to-emerald-400/10"],
+      ["brujula", "🧭", "Brújula", "from-pink-300/40 to-fuchsia-400/10"],
+      ["amuleto", "🪬", "Amuleto", "from-slate-300/40 to-slate-500/10"],
+      ["archivo", "🗂️", "Archivo", "from-amber-300/40 to-orange-400/10"],
+    ]},
+    { id: "mem-leyenda-cripta", config: [
+      ["pergamino", "📜", "Pergamino", "from-fuchsia-300/40 to-rose-400/10"],
+      ["santuario", "⛩️", "Santuario", "from-indigo-400/40 to-sky-400/10"],
+      ["cripta", "🪦", "Cripta", "from-emerald-300/40 to-teal-400/10"],
+      ["llave", "🗝️", "Llave", "from-cyan-300/40 to-blue-400/10"],
+      ["reloj", "⏳", "Reloj", "from-orange-300/40 to-amber-400/10"],
+      ["amuleto", "🪬", "Amuleto", "from-lime-300/40 to-emerald-400/10"],
+      ["misterio", "🌒", "Misterio", "from-lime-300/40 to-emerald-400/10"],
+      ["runas", "🔣", "Runas", "from-pink-300/40 to-fuchsia-400/10"],
+      ["portal", "🌀", "Portal", "from-slate-300/40 to-slate-500/10"],
+      ["brujula", "🧭", "Brújula", "from-amber-300/40 to-orange-400/10"],
+    ]},
   ],
-} satisfies Record<DifficultyLevel, Array<[string, string, string, string]>>;
+} satisfies Record<DifficultyLevel, Array<Variant<Array<[string, string, string, string]>>>>;
 
 function normalizeText(value: string) {
   return value
@@ -352,6 +656,16 @@ function shuffleArray<T>(items: T[]) {
   }
 
   return copy;
+}
+
+function pickVariant<T>(variants: Array<Variant<T>>, previousVariantId?: string) {
+  if (variants.length === 0) {
+    throw new Error("Variant pool cannot be empty");
+  }
+
+  const eligible = variants.length > 1 ? variants.filter((variant) => variant.id !== previousVariantId) : variants;
+  const selected = eligible[Math.floor(Math.random() * eligible.length)];
+  return selected ?? variants[0];
 }
 
 function buildCrosswordLetterBank(answer: string, distractors: string[]) {
@@ -452,8 +766,7 @@ function validateWordSearchConfig(
   });
 }
 
-function buildCrosswordStage(difficulty: DifficultyLevel): StageDefinition {
-  const config = crosswordByDifficulty[difficulty];
+function buildCrosswordStageFromConfig(difficulty: DifficultyLevel, config: CrosswordConfig): StageDefinition {
   validateCrosswordConfig(difficulty, config);
   const slots = config.answer.split("").map((_, index) => [config.row, config.startCol + index] as [number, number]);
   const blocks: Array<[number, number]> = [];
@@ -484,8 +797,7 @@ function buildCrosswordStage(difficulty: DifficultyLevel): StageDefinition {
   };
 }
 
-function buildWordSearchStage(difficulty: DifficultyLevel): StageDefinition {
-  const config = wordSearchByDifficulty[difficulty];
+function buildWordSearchStageFromConfig(difficulty: DifficultyLevel, config: WordSearchConfig): StageDefinition {
   validateWordSearchConfig(difficulty, config);
   const grid = buildWordSearchGrid(config);
   const words = config.paths.map((entry) => entry.word);
@@ -505,8 +817,11 @@ function buildWordSearchStage(difficulty: DifficultyLevel): StageDefinition {
   };
 }
 
-function buildDrawingStage(difficulty: DifficultyLevel, drawerPlayerId: string): StageDefinition {
-  const config = drawingByDifficulty[difficulty];
+function buildDrawingStageFromConfig(
+  difficulty: DifficultyLevel,
+  drawerPlayerId: string,
+  config: DrawingConfig,
+): StageDefinition {
   return {
     id: `drawing-${difficulty}`,
     miniGameType: "dibujo",
@@ -529,8 +844,11 @@ function buildDrawingStage(difficulty: DifficultyLevel, drawerPlayerId: string):
   };
 }
 
-function buildMemoryStage(difficulty: DifficultyLevel): StageDefinition {
-  const cards = memoryByDifficulty[difficulty].flatMap(([pairId, icon, label, tint], index) => {
+function buildMemoryStageFromConfig(
+  difficulty: DifficultyLevel,
+  pairs: Array<[string, string, string, string]>,
+): StageDefinition {
+  const cards = pairs.flatMap(([pairId, icon, label, tint], index) => {
     const cardA: MemoryCard = { id: `${pairId}-a-${index}`, pairId, icon, label, tint };
     const cardB: MemoryCard = { id: `${pairId}-b-${index}`, pairId, icon, label, tint };
     return [cardA, cardB];
@@ -560,18 +878,34 @@ export function buildStageQueue(
   difficulty: DifficultyLevel,
   playlist: MiniGameType[],
   playerIds: string[],
-): StageDefinition[] {
-  return playlist.map((miniGameType, stageIndex) => {
+  previousVariantIds: Partial<Record<MiniGameType, string>> = {},
+): { stages: StageDefinition[]; variantIds: Partial<Record<MiniGameType, string>> } {
+  const variantIds: Partial<Record<MiniGameType, string>> = {};
+  const stages = playlist.map((miniGameType, stageIndex) => {
     switch (miniGameType) {
-      case "crucigrama":
-        return buildCrosswordStage(difficulty);
-      case "sopa":
-        return buildWordSearchStage(difficulty);
-      case "dibujo":
-        return buildDrawingStage(difficulty, getDrawerPlayerId(playerIds, stageIndex));
+      case "crucigrama": {
+        const selected = pickVariant(crosswordByDifficulty[difficulty], previousVariantIds.crucigrama);
+        variantIds.crucigrama = selected.id;
+        return buildCrosswordStageFromConfig(difficulty, selected.config);
+      }
+      case "sopa": {
+        const selected = pickVariant(wordSearchByDifficulty[difficulty], previousVariantIds.sopa);
+        variantIds.sopa = selected.id;
+        return buildWordSearchStageFromConfig(difficulty, selected.config);
+      }
+      case "dibujo": {
+        const selected = pickVariant(drawingByDifficulty[difficulty], previousVariantIds.dibujo);
+        variantIds.dibujo = selected.id;
+        return buildDrawingStageFromConfig(difficulty, getDrawerPlayerId(playerIds, stageIndex), selected.config);
+      }
       case "memorama":
-      default:
-        return buildMemoryStage(difficulty);
+      default: {
+        const selected = pickVariant(memoryByDifficulty[difficulty], previousVariantIds.memorama);
+        variantIds.memorama = selected.id;
+        return buildMemoryStageFromConfig(difficulty, selected.config);
+      }
     }
   });
+
+  return { stages, variantIds };
 }
