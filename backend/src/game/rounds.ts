@@ -53,6 +53,17 @@ const crosswordByDifficulty = {
         distractors: ["M", "A", "P", "A", "S", "R", "U"],
       },
     },
+    {
+      id: "cross-explorador-mochila",
+      config: {
+        answer: "MOCHILA",
+        clue: "Equipo que carga lo importante cuando una ruta cambia sin aviso.",
+        size: 10,
+        row: 4,
+        startCol: 1,
+        distractors: ["L", "U", "P", "A", "R", "A", "S"],
+      },
+    },
   ],
   agente: [
     {
@@ -77,6 +88,17 @@ const crosswordByDifficulty = {
         distractors: ["A", "R", "C", "H", "I", "V", "O", "S", "L"],
       },
     },
+    {
+      id: "cross-agente-dossier",
+      config: {
+        answer: "DOSSIER",
+        clue: "Carpeta reservada que resume nombres, pruebas y conexiones del caso.",
+        size: 11,
+        row: 5,
+        startCol: 1,
+        distractors: ["C", "L", "A", "V", "E", "M", "R", "A"],
+      },
+    },
   ],
   leyenda: [
     {
@@ -99,6 +121,17 @@ const crosswordByDifficulty = {
         row: 6,
         startCol: 1,
         distractors: ["C", "R", "I", "P", "T", "A", "S", "N", "O", "M"],
+      },
+    },
+    {
+      id: "cross-leyenda-pergamino",
+      config: {
+        answer: "PERGAMINO",
+        clue: "Documento antiguo cuyo contenido cambia el sentido completo de la expedicion.",
+        size: 13,
+        row: 6,
+        startCol: 1,
+        distractors: ["R", "U", "N", "A", "S", "C", "R", "I", "P", "T"],
       },
     },
   ],
@@ -201,6 +234,58 @@ const wordSearchByDifficulty = {
               [1, 5],
               [2, 5],
               [3, 5],
+            ],
+          },
+        ],
+      },
+    },
+    {
+      id: "sopa-explorador-campo",
+      config: {
+        size: 6,
+        filler: "SENDANIEBLA",
+        paths: [
+          {
+            word: "FOCO",
+            cells: [
+              [0, 0],
+              [0, 1],
+              [0, 2],
+              [0, 3],
+            ],
+          },
+          {
+            word: "CUADERNO",
+            cells: [
+              [1, 0],
+              [1, 1],
+              [1, 2],
+              [1, 3],
+              [1, 4],
+              [1, 5],
+              [2, 5],
+              [3, 5],
+            ],
+          },
+          {
+            word: "MOCHILA",
+            cells: [
+              [3, 0],
+              [3, 1],
+              [3, 2],
+              [3, 3],
+              [3, 4],
+              [4, 4],
+              [4, 3],
+            ],
+          },
+          {
+            word: "LUPA",
+            cells: [
+              [5, 0],
+              [5, 1],
+              [5, 2],
+              [5, 3],
             ],
           },
         ],
@@ -342,6 +427,83 @@ const wordSearchByDifficulty = {
               [6, 6],
               [6, 5],
               [7, 5],
+            ],
+          },
+        ],
+      },
+    },
+    {
+      id: "sopa-agente-vigilancia",
+      config: {
+        size: 8,
+        filler: "DOSSIERSECRETOALERTARASTRO",
+        paths: [
+          {
+            word: "SELLO",
+            cells: [
+              [0, 0],
+              [0, 1],
+              [0, 2],
+              [0, 3],
+              [0, 4],
+            ],
+          },
+          {
+            word: "PRUEBA",
+            cells: [
+              [1, 0],
+              [1, 1],
+              [1, 2],
+              [1, 3],
+              [2, 3],
+              [3, 3],
+            ],
+          },
+          {
+            word: "DOSSIER",
+            cells: [
+              [2, 0],
+              [2, 1],
+              [2, 2],
+              [3, 2],
+              [4, 2],
+              [4, 3],
+              [4, 4],
+            ],
+          },
+          {
+            word: "VIGILIA",
+            cells: [
+              [5, 0],
+              [5, 1],
+              [5, 2],
+              [5, 3],
+              [5, 4],
+              [6, 4],
+              [7, 4],
+            ],
+          },
+          {
+            word: "ARCHIVO",
+            cells: [
+              [7, 0],
+              [6, 0],
+              [6, 1],
+              [6, 2],
+              [6, 3],
+              [7, 3],
+              [7, 2],
+            ],
+          },
+          {
+            word: "CAMARA",
+            cells: [
+              [3, 7],
+              [4, 7],
+              [5, 7],
+              [5, 6],
+              [5, 5],
+              [4, 5],
             ],
           },
         ],
@@ -548,6 +710,111 @@ const wordSearchByDifficulty = {
         ],
       },
     },
+    {
+      id: "sopa-leyenda-archivo",
+      config: {
+        size: 10,
+        filler: "NOCHESECRETARUNICOPENUMBRA",
+        paths: [
+          {
+            word: "PERGAMINO",
+            cells: [
+              [0, 0],
+              [0, 1],
+              [0, 2],
+              [0, 3],
+              [1, 3],
+              [2, 3],
+              [2, 4],
+              [2, 5],
+              [2, 6],
+            ],
+          },
+          {
+            word: "MONOLITO",
+            cells: [
+              [0, 9],
+              [1, 9],
+              [2, 9],
+              [3, 9],
+              [3, 8],
+              [3, 7],
+              [3, 6],
+              [3, 5],
+            ],
+          },
+          {
+            word: "SANTIDAD",
+            cells: [
+              [4, 0],
+              [4, 1],
+              [4, 2],
+              [4, 3],
+              [5, 3],
+              [6, 3],
+              [6, 2],
+              [6, 1],
+            ],
+          },
+          {
+            word: "MISTERIO",
+            cells: [
+              [5, 9],
+              [5, 8],
+              [5, 7],
+              [5, 6],
+              [6, 6],
+              [7, 6],
+              [7, 7],
+              [7, 8],
+            ],
+          },
+          {
+            word: "PORTAL",
+            cells: [
+              [9, 0],
+              [8, 0],
+              [8, 1],
+              [8, 2],
+              [9, 2],
+              [9, 3],
+            ],
+          },
+          {
+            word: "CRIPTA",
+            cells: [
+              [9, 9],
+              [8, 9],
+              [8, 8],
+              [8, 7],
+              [9, 7],
+              [9, 6],
+            ],
+          },
+          {
+            word: "RUNICO",
+            cells: [
+              [7, 0],
+              [7, 1],
+              [7, 2],
+              [7, 3],
+              [7, 4],
+              [6, 4],
+            ],
+          },
+          {
+            word: "RUNAS",
+            cells: [
+              [1, 6],
+              [1, 7],
+              [1, 8],
+              [2, 8],
+              [2, 7],
+            ],
+          },
+        ],
+      },
+    },
   ],
 } satisfies Record<DifficultyLevel, Array<Variant<WordSearchConfig>>>;
 
@@ -555,14 +822,20 @@ const drawingByDifficulty: Record<DifficultyLevel, Array<Variant<DrawingConfig>>
   explorador: [
     { id: "draw-explorador-linterna", config: { prompt: "Linterna", answerMode: "options", options: ["Linterna", "Brújula", "Mapa", "Mochila"] } },
     { id: "draw-explorador-botas", config: { prompt: "Botas", answerMode: "options", options: ["Botas", "Mochila", "Lupa", "Mapa"] } },
+    { id: "draw-explorador-lupa", config: { prompt: "Lupa", answerMode: "options", options: ["Lupa", "Brújula", "Silbato", "Cuaderno"] } },
+    { id: "draw-explorador-cantimplora", config: { prompt: "Cantimplora", answerMode: "options", options: ["Cantimplora", "Linterna", "Mochila", "Mapa"] } },
   ],
   agente: [
     { id: "draw-agente-candado", config: { prompt: "Candado antiguo", answerMode: "options", options: ["Candado antiguo", "Llave maestra", "Cofre sellado", "Archivo clasificado", "Reloj de arena", "Farol"] } },
     { id: "draw-agente-dossier", config: { prompt: "Dosier secreto", answerMode: "options", options: ["Dosier secreto", "Mapa cifrado", "Cinta magnetica", "Maletin de pruebas", "Carta rota", "Placa dorada"] } },
+    { id: "draw-agente-camara", config: { prompt: "Camara espia", answerMode: "options", options: ["Camara espia", "Radio codificada", "Sello oficial", "Grabadora", "Dosier secreto", "Maletin de pruebas"] } },
+    { id: "draw-agente-radio", config: { prompt: "Radio codificada", answerMode: "options", options: ["Radio codificada", "Camara espia", "Llave maestra", "Cofre sellado", "Cinta magnetica", "Placa dorada"] } },
   ],
   leyenda: [
     { id: "draw-leyenda-reloj", config: { prompt: "Reloj de arena", answerMode: "text", options: [] } },
     { id: "draw-leyenda-amuleto", config: { prompt: "Amuleto antiguo", answerMode: "text", options: [] } },
+    { id: "draw-leyenda-portal", config: { prompt: "Portal runico", answerMode: "text", options: [] } },
+    { id: "draw-leyenda-pergamino", config: { prompt: "Pergamino sellado", answerMode: "text", options: [] } },
   ],
 };
 
@@ -658,14 +931,25 @@ function shuffleArray<T>(items: T[]) {
   return copy;
 }
 
-function pickVariant<T>(variants: Array<Variant<T>>, previousVariantId?: string) {
+function pickVariantFromHistory<T>(variants: Array<Variant<T>>, history: string[] = [], blockedIds: string[] = []) {
   if (variants.length === 0) {
     throw new Error("Variant pool cannot be empty");
   }
 
-  const eligible = variants.length > 1 ? variants.filter((variant) => variant.id !== previousVariantId) : variants;
-  const selected = eligible[Math.floor(Math.random() * eligible.length)];
-  return selected ?? variants[0];
+  let eligible = variants.filter((variant) => !history.includes(variant.id) && !blockedIds.includes(variant.id));
+
+  if (eligible.length === 0) {
+    eligible = variants.filter((variant) => !blockedIds.includes(variant.id));
+  }
+
+  if (eligible.length === 0) {
+    eligible = variants;
+  }
+
+  const selected = eligible[Math.floor(Math.random() * eligible.length)] ?? variants[0];
+  const nextHistory = [...history.filter((id) => variants.some((variant) => variant.id === id && variant.id !== selected.id)), selected.id];
+
+  return { selected, history: nextHistory };
 }
 
 function buildCrosswordLetterBank(answer: string, distractors: string[]) {
@@ -878,34 +1162,48 @@ export function buildStageQueue(
   difficulty: DifficultyLevel,
   playlist: MiniGameType[],
   playerIds: string[],
-  previousVariantIds: Partial<Record<MiniGameType, string>> = {},
-): { stages: StageDefinition[]; variantIds: Partial<Record<MiniGameType, string>> } {
-  const variantIds: Partial<Record<MiniGameType, string>> = {};
-  const stages = playlist.map((miniGameType, stageIndex) => {
+  previousVariantHistory: Partial<Record<MiniGameType, string[]>> = {},
+): { stages: StageDefinition[]; variantHistory: Partial<Record<MiniGameType, string[]>> } {
+  const variantHistory: Partial<Record<MiniGameType, string[]>> = { ...previousVariantHistory };
+  const stages: StageDefinition[] = [];
+
+  playlist.forEach((miniGameType, stageIndex) => {
     switch (miniGameType) {
       case "crucigrama": {
-        const selected = pickVariant(crosswordByDifficulty[difficulty], previousVariantIds.crucigrama);
-        variantIds.crucigrama = selected.id;
-        return buildCrosswordStageFromConfig(difficulty, selected.config);
+        const result = pickVariantFromHistory(crosswordByDifficulty[difficulty], variantHistory.crucigrama);
+        variantHistory.crucigrama = result.history;
+        stages.push(buildCrosswordStageFromConfig(difficulty, result.selected.config));
+        return;
       }
       case "sopa": {
-        const selected = pickVariant(wordSearchByDifficulty[difficulty], previousVariantIds.sopa);
-        variantIds.sopa = selected.id;
-        return buildWordSearchStageFromConfig(difficulty, selected.config);
+        const result = pickVariantFromHistory(wordSearchByDifficulty[difficulty], variantHistory.sopa);
+        variantHistory.sopa = result.history;
+        stages.push(buildWordSearchStageFromConfig(difficulty, result.selected.config));
+        return;
       }
       case "dibujo": {
-        const selected = pickVariant(drawingByDifficulty[difficulty], previousVariantIds.dibujo);
-        variantIds.dibujo = selected.id;
-        return buildDrawingStageFromConfig(difficulty, getDrawerPlayerId(playerIds, stageIndex), selected.config);
+        let drawingHistory = variantHistory.dibujo ?? [];
+        const usedThisBatch: string[] = [];
+
+        playerIds.forEach((drawerPlayerId) => {
+          const result = pickVariantFromHistory(drawingByDifficulty[difficulty], drawingHistory, usedThisBatch);
+          drawingHistory = result.history;
+          usedThisBatch.push(result.selected.id);
+          stages.push(buildDrawingStageFromConfig(difficulty, drawerPlayerId, result.selected.config));
+        });
+
+        variantHistory.dibujo = drawingHistory;
+        return;
       }
       case "memorama":
       default: {
-        const selected = pickVariant(memoryByDifficulty[difficulty], previousVariantIds.memorama);
-        variantIds.memorama = selected.id;
-        return buildMemoryStageFromConfig(difficulty, selected.config);
+        const result = pickVariantFromHistory(memoryByDifficulty[difficulty], variantHistory.memorama);
+        variantHistory.memorama = result.history;
+        stages.push(buildMemoryStageFromConfig(difficulty, result.selected.config));
+        return;
       }
     }
   });
 
-  return { stages, variantIds };
+  return { stages, variantHistory };
 }

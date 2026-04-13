@@ -44,7 +44,7 @@ interface RoomInternal {
   selectedDifficulty: DifficultyLevel;
   configuredMiniGames: MiniGameType[];
   stageQueue: StageDefinition[];
-  lastStageVariantIds: Partial<Record<DifficultyLevel, Partial<Record<MiniGameType, string>>>>;
+  stageVariantHistory: Partial<Record<DifficultyLevel, Partial<Record<MiniGameType, string[]>>>>;
   currentStageIndex: number;
   stage: StageDefinition | null;
   stageStartedAt: number | null;
@@ -126,6 +126,10 @@ function sanitizePlaylist(playlist: MiniGameType[] | undefined) {
 
 function sortPlayers(players: Iterable<PlayerInternal>) {
   return [...players].sort((left, right) => right.score - left.score || left.name.localeCompare(right.name));
+}
+
+function getPlannedStageCount(playlist: MiniGameType[], playerCount: number) {
+  return playlist.reduce((total, miniGameType) => total + (miniGameType === "dibujo" ? Math.max(playerCount, 1) : 1), 0);
 }
 
 function computeWinners(room: RoomInternal): WinnerSummary[] {
@@ -304,10 +308,10 @@ function startPreparedGame(room: RoomInternal) {
     room.selectedDifficulty,
     room.configuredMiniGames,
     playerIds,
-    room.lastStageVariantIds[room.selectedDifficulty],
+    room.stageVariantHistory[room.selectedDifficulty],
   );
   room.stageQueue = queueBuild.stages;
-  room.lastStageVariantIds[room.selectedDifficulty] = queueBuild.variantIds;
+  room.stageVariantHistory[room.selectedDifficulty] = queueBuild.variantHistory;
   room.currentStageIndex = 0;
   room.finished = null;
   for (const player of room.players.values()) {
@@ -349,7 +353,7 @@ export function createRoom(playerName: string, difficulty: DifficultyLevel, sock
     selectedDifficulty,
     configuredMiniGames: [...DEFAULT_PLAYLIST],
     stageQueue: [],
-    lastStageVariantIds: {},
+    stageVariantHistory: {},
     currentStageIndex: 0,
     stage: null,
     stageStartedAt: null,
@@ -437,7 +441,7 @@ export function toRoomState(room: RoomInternal, viewerPlayerId?: string | null):
     availableDifficulties: DIFFICULTY_OPTIONS,
     availableMiniGames: MINI_GAME_CATALOG,
     currentStageNumber: room.phase === "playing" ? room.currentStageIndex + 1 : room.currentStageIndex,
-    totalStages: room.configuredMiniGames.length,
+    totalStages: room.phase === "playing" ? room.stageQueue.length : getPlannedStageCount(room.configuredMiniGames, room.players.size),
     stage: toStagePublic(room.stage, viewerPlayerId),
     finished: room.finished,
     winners: computeWinners(room),
