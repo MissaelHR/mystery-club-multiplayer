@@ -8,44 +8,52 @@ import {
 
 const brushPalette = ["#f8fafc", "#f59e0b", "#22d3ee", "#34d399", "#fb7185"];
 
+type WordPath = { word: string; cells: Array<[number, number]> };
+type CrosswordConfig = {
+  answer: string;
+  clue: string;
+  size: number;
+  row: number;
+  startCol: number;
+  distractors: string[];
+};
+type WordSearchConfig = {
+  size: number;
+  filler: string;
+  paths: WordPath[];
+};
+
 const crosswordByDifficulty = {
   explorador: {
     answer: "BRUJULA",
-    clue: "Te orienta cuando apenas empiezas la expedicion.",
-    size: 8,
-    row: 3,
-    startCol: 0,
-    bank: ["B", "R", "U", "J", "U", "L", "A", "M", "A", "P", "O", "S"],
+    clue: "Instrumento basico para no perder el norte durante la primera busqueda.",
+    size: 10,
+    row: 4,
+    startCol: 1,
+    distractors: ["M", "A", "P", "A", "R", "U"],
   },
   agente: {
-    answer: "CODIGO",
-    clue: "La clave principal del caso esta escondida en esta palabra.",
-    size: 7,
-    row: 2,
-    startCol: 0,
-    bank: ["C", "O", "D", "I", "G", "O", "L", "L", "A", "V", "E"],
+    answer: "EXPEDIENTE",
+    clue: "Documento central del caso. Sin esta pieza, la investigacion queda incompleta.",
+    size: 13,
+    row: 6,
+    startCol: 1,
+    distractors: ["C", "L", "A", "V", "E", "R", "A", "S", "T", "R", "O"],
   },
   leyenda: {
-    answer: "RELIQUIA",
-    clue: "Pieza legendaria que justifica toda la busqueda.",
-    size: 9,
-    row: 4,
-    startCol: 0,
-    bank: ["R", "E", "L", "I", "Q", "U", "I", "A", "M", "A", "P", "S"],
+    answer: "CRIPTOLOGIA",
+    clue: "Disciplina necesaria para romper el mensaje final sin cometer un solo error de lectura.",
+    size: 14,
+    row: 7,
+    startCol: 1,
+    distractors: ["A", "N", "T", "I", "G", "U", "A", "R", "I", "O", "S", "M"],
   },
-} satisfies Record<DifficultyLevel, { answer: string; clue: string; size: number; row: number; startCol: number; bank: string[] }>;
+} satisfies Record<DifficultyLevel, CrosswordConfig>;
 
 const wordSearchByDifficulty = {
   explorador: {
-    grid: [
-      ["M", "A", "P", "A", "R", "S"],
-      ["L", "I", "N", "T", "E", "R"],
-      ["O", "B", "S", "E", "N", "U"],
-      ["B", "R", "U", "J", "U", "L"],
-      ["A", "D", "A", "C", "R", "A"],
-      ["R", "U", "T", "A", "S", "L"],
-    ],
-    words: ["MAPA", "LINTERNA", "BRUJULA", "RUTA"],
+    size: 6,
+    filler: "SOMBRANOCHE",
     paths: [
       {
         word: "MAPA",
@@ -94,87 +102,82 @@ const wordSearchByDifficulty = {
     ],
   },
   agente: {
-    grid: [
-      ["C", "O", "D", "I", "G", "O", "S"],
-      ["M", "E", "N", "S", "A", "J", "E"],
-      ["P", "I", "S", "T", "A", "R", "D"],
-      ["N", "A", "L", "L", "A", "V", "E"],
-      ["O", "K", "X", "H", "C", "I", "V"],
-      ["R", "A", "R", "C", "H", "I", "V"],
-      ["T", "R", "A", "Z", "A", "L", "O"],
-    ],
-    words: ["CODIGO", "MENSAJE", "PISTA", "LLAVE", "ARCHIVO"],
+    size: 8,
+    filler: "TRAMPASECRETAFALSOPASILLO",
     paths: [
       {
-        word: "CODIGO",
+        word: "CLAVE",
         cells: [
           [0, 0],
           [0, 1],
           [0, 2],
           [0, 3],
           [0, 4],
-          [0, 5],
         ],
       },
       {
-        word: "MENSAJE",
+        word: "CODIGO",
         cells: [
           [1, 0],
           [1, 1],
           [1, 2],
           [1, 3],
-          [1, 4],
-          [1, 5],
-          [1, 6],
+          [2, 3],
+          [3, 3],
         ],
       },
       {
-        word: "PISTA",
+        word: "INDICIO",
         cells: [
           [2, 0],
           [2, 1],
           [2, 2],
-          [2, 3],
-          [2, 4],
-        ],
-      },
-      {
-        word: "LLAVE",
-        cells: [
           [3, 2],
-          [3, 3],
-          [3, 4],
-          [3, 5],
-          [3, 6],
+          [4, 2],
+          [4, 3],
+          [4, 4],
         ],
       },
       {
         word: "ARCHIVO",
         cells: [
+          [5, 0],
           [5, 1],
           [5, 2],
           [5, 3],
           [5, 4],
-          [5, 5],
+          [6, 4],
+          [7, 4],
+        ],
+      },
+      {
+        word: "MENSAJE",
+        cells: [
+          [7, 0],
+          [6, 0],
+          [6, 1],
+          [6, 2],
+          [6, 3],
+          [7, 3],
+          [7, 2],
+        ],
+      },
+      {
+        word: "RASTRO",
+        cells: [
+          [3, 7],
+          [4, 7],
+          [5, 7],
           [5, 6],
-          [6, 6],
-          [6, 5],
+          [5, 5],
+          [4, 5],
         ],
       },
     ],
   },
   leyenda: {
-    grid: [
-      ["L", "A", "B", "E", "R", "I", "N", "T"],
-      ["P", "A", "S", "A", "D", "I", "Z", "O"],
-      ["A", "C", "E", "R", "T", "I", "J", "O"],
-      ["R", "E", "L", "I", "Q", "U", "I", "A"],
-      ["T", "V", "X", "R", "U", "N", "A", "S"],
-      ["A", "P", "O", "R", "O", "D", "I", "G"],
-      ["L", "M", "R", "T", "A", "L", "L", "O"],
-      ["M", "A", "P", "A", "S", "O", "L", "S"],
-    ],
-    words: ["LABERINTO", "PASADIZO", "ACERTIJO", "RELIQUIA", "RUNAS", "PORTAL"],
+    size: 10,
+    filler: "NOCTURNASECRETAUMBRASOMBRAENCLAVE",
     paths: [
       {
         word: "LABERINTO",
@@ -183,94 +186,116 @@ const wordSearchByDifficulty = {
           [0, 1],
           [0, 2],
           [0, 3],
-          [0, 4],
-          [0, 5],
-          [0, 6],
-          [0, 7],
-          [1, 7],
-        ],
-      },
-      {
-        word: "PASADIZO",
-        cells: [
-          [1, 0],
-          [1, 1],
-          [1, 2],
           [1, 3],
-          [1, 4],
-          [1, 5],
-          [1, 6],
-          [1, 7],
-        ],
-      },
-      {
-        word: "ACERTIJO",
-        cells: [
-          [2, 0],
-          [2, 1],
-          [2, 2],
           [2, 3],
           [2, 4],
           [2, 5],
           [2, 6],
-          [2, 7],
         ],
       },
       {
         word: "RELIQUIA",
         cells: [
-          [3, 0],
-          [3, 1],
-          [3, 2],
-          [3, 3],
-          [3, 4],
-          [3, 5],
-          [3, 6],
+          [0, 9],
+          [1, 9],
+          [2, 9],
+          [3, 9],
+          [3, 8],
           [3, 7],
+          [3, 6],
+          [3, 5],
         ],
       },
       {
-        word: "RUNAS",
+        word: "PASADIZO",
         cells: [
+          [4, 0],
+          [4, 1],
+          [4, 2],
           [4, 3],
-          [4, 4],
-          [4, 5],
-          [4, 6],
-          [4, 7],
+          [5, 3],
+          [6, 3],
+          [6, 2],
+          [6, 1],
+        ],
+      },
+      {
+        word: "ACERTIJO",
+        cells: [
+          [5, 9],
+          [5, 8],
+          [5, 7],
+          [5, 6],
+          [6, 6],
+          [7, 6],
+          [7, 7],
+          [7, 8],
         ],
       },
       {
         word: "PORTAL",
         cells: [
-          [5, 1],
-          [5, 2],
-          [5, 3],
-          [6, 3],
+          [9, 0],
+          [8, 0],
+          [8, 1],
+          [8, 2],
+          [9, 2],
+          [9, 3],
+        ],
+      },
+      {
+        word: "UMBRAL",
+        cells: [
+          [9, 9],
+          [8, 9],
+          [8, 8],
+          [8, 7],
+          [9, 7],
+          [9, 6],
+        ],
+      },
+      {
+        word: "ENIGMA",
+        cells: [
+          [7, 0],
+          [7, 1],
+          [7, 2],
+          [7, 3],
+          [7, 4],
           [6, 4],
-          [6, 5],
+        ],
+      },
+      {
+        word: "RUNAS",
+        cells: [
+          [1, 6],
+          [1, 7],
+          [1, 8],
+          [2, 8],
+          [2, 7],
         ],
       },
     ],
   },
-} satisfies Record<
-  DifficultyLevel,
-  { grid: string[][]; words: string[]; paths: Array<{ word: string; cells: Array<[number, number]> }> }
->;
+} satisfies Record<DifficultyLevel, WordSearchConfig>;
 
 const drawingByDifficulty = {
   explorador: {
-    prompt: "Mochila",
-    options: ["Mochila", "Brújula", "Ventana", "Candado"],
+    prompt: "Linterna",
+    answerMode: "options",
+    options: ["Linterna", "Brújula", "Mapa", "Mochila"],
   },
   agente: {
-    prompt: "Candado",
-    options: ["Reloj", "Candado", "Brújula", "Campana"],
+    prompt: "Candado antiguo",
+    answerMode: "options",
+    options: ["Candado antiguo", "Llave maestra", "Cofre sellado", "Archivo clasificado", "Reloj de arena", "Farol"],
   },
   leyenda: {
-    prompt: "Reliquia",
-    options: ["Reliquia", "Mapa", "Escalera", "Maleta"],
+    prompt: "Reloj de arena",
+    answerMode: "text",
+    options: [],
   },
-} satisfies Record<DifficultyLevel, { prompt: string; options: string[] }>;
+} satisfies Record<DifficultyLevel, { prompt: string; answerMode: "options" | "text"; options: string[] }>;
 
 const memoryByDifficulty = {
   explorador: [
@@ -286,6 +311,8 @@ const memoryByDifficulty = {
     ["lupa", "🔎", "Lupa", "from-cyan-300/40 to-blue-400/10"],
     ["mensaje", "✉️", "Mensaje", "from-fuchsia-300/40 to-rose-400/10"],
     ["reloj", "⏰", "Reloj", "from-orange-300/40 to-amber-400/10"],
+    ["candado", "🧰", "Candado", "from-slate-300/40 to-slate-500/10"],
+    ["brujula", "🧭", "Brújula", "from-indigo-300/40 to-blue-500/10"],
   ],
   leyenda: [
     ["reliquia", "💎", "Reliquia", "from-fuchsia-300/40 to-rose-400/10"],
@@ -296,6 +323,8 @@ const memoryByDifficulty = {
     ["pasadizo", "🚪", "Pasadizo", "from-lime-300/40 to-emerald-400/10"],
     ["candado", "🔐", "Candado", "from-lime-300/40 to-emerald-400/10"],
     ["brujula", "🧭", "Brújula", "from-pink-300/40 to-fuchsia-400/10"],
+    ["amuleto", "🪬", "Amuleto", "from-slate-300/40 to-slate-500/10"],
+    ["archivo", "🗂️", "Archivo", "from-amber-300/40 to-orange-400/10"],
   ],
 } satisfies Record<DifficultyLevel, Array<[string, string, string, string]>>;
 
@@ -308,11 +337,82 @@ function normalizeText(value: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function buildLetterCounts(letters: string[]) {
+  return letters.reduce((accumulator, letter) => {
+    accumulator.set(letter, (accumulator.get(letter) ?? 0) + 1);
+    return accumulator;
+  }, new Map<string, number>());
+}
+
+function shuffleArray<T>(items: T[]) {
+  const copy = [...items];
+
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+  }
+
+  return copy;
+}
+
+function buildCrosswordLetterBank(answer: string, distractors: string[]) {
+  return shuffleArray([...answer.split(""), ...distractors.map((letter) => normalizeText(letter))]);
+}
+
+function validateCrosswordConfig(difficulty: DifficultyLevel, config: CrosswordConfig) {
+  const answerLetters = config.answer.split("");
+  const bankCounts = buildLetterCounts(buildCrosswordLetterBank(config.answer, config.distractors));
+  const answerCounts = buildLetterCounts(answerLetters);
+
+  answerCounts.forEach((count, letter) => {
+    if ((bankCounts.get(letter) ?? 0) < count) {
+      throw new Error(`Crossword bank is missing letters for ${difficulty}`);
+    }
+  });
+
+  if (config.startCol + answerLetters.length > config.size) {
+    throw new Error(`Crossword answer overflows board for ${difficulty}`);
+  }
+}
+
+function buildWordSearchGrid(config: WordSearchConfig) {
+  const normalizedFiller = normalizeText(config.filler).replace(/[^A-Z]/g, "") || "SOMBRA";
+  let fillerIndex = 0;
+  const grid = Array.from({ length: config.size }, () => Array.from({ length: config.size }, () => ""));
+
+  config.paths.forEach((entry) => {
+    const letters = normalizeText(entry.word).split("");
+    entry.cells.forEach(([row, col], index) => {
+      const nextLetter = letters[index];
+      const current = grid[row]?.[col];
+
+      if (current && current !== nextLetter) {
+        throw new Error(`Word search overlap mismatch for ${entry.word}`);
+      }
+
+      grid[row][col] = nextLetter;
+    });
+  });
+
+  return grid.map((row) =>
+    row.map((cell) => {
+      if (cell) {
+        return cell;
+      }
+
+      const nextLetter = normalizedFiller[fillerIndex % normalizedFiller.length];
+      fillerIndex += 1;
+      return nextLetter;
+    }),
+  );
+}
+
 function validateWordSearchConfig(
   difficulty: DifficultyLevel,
-  config: { grid: string[][]; words: string[]; paths: Array<{ word: string; cells: Array<[number, number]> }> },
+  config: WordSearchConfig,
 ) {
-  const listedWords = [...config.words].map(normalizeText).sort().join("|");
+  const grid = buildWordSearchGrid(config);
+  const listedWords = config.paths.map((entry) => normalizeText(entry.word)).sort().join("|");
   const pathWords = config.paths.map((entry) => normalizeText(entry.word)).sort().join("|");
 
   if (listedWords !== pathWords) {
@@ -320,18 +420,42 @@ function validateWordSearchConfig(
   }
 
   config.paths.forEach((entry) => {
+    if (entry.cells.length !== normalizeText(entry.word).length) {
+      throw new Error(`Word search path length mismatch for ${difficulty}: ${entry.word}`);
+    }
+
     const tracedWord = entry.cells
-      .map(([row, col]) => config.grid[row]?.[col] ?? "")
+      .map(([row, col]) => {
+        if (row < 0 || col < 0 || row >= config.size || col >= config.size) {
+          throw new Error(`Word search path out of bounds for ${difficulty}: ${entry.word}`);
+        }
+        return grid[row]?.[col] ?? "";
+      })
       .join("");
 
     if (normalizeText(tracedWord) !== normalizeText(entry.word)) {
       throw new Error(`Invalid word path for ${difficulty}: ${entry.word}`);
     }
+
+    entry.cells.forEach(([row, col], index) => {
+      if (index === 0) {
+        return;
+      }
+
+      const [previousRow, previousCol] = entry.cells[index - 1];
+      const rowDelta = Math.abs(previousRow - row);
+      const colDelta = Math.abs(previousCol - col);
+
+      if ((rowDelta === 0 && colDelta === 0) || rowDelta > 1 || colDelta > 1) {
+        throw new Error(`Word search path is not contiguous for ${difficulty}: ${entry.word}`);
+      }
+    });
   });
 }
 
 function buildCrosswordStage(difficulty: DifficultyLevel): StageDefinition {
   const config = crosswordByDifficulty[difficulty];
+  validateCrosswordConfig(difficulty, config);
   const slots = config.answer.split("").map((_, index) => [config.row, config.startCol + index] as [number, number]);
   const blocks: Array<[number, number]> = [];
 
@@ -346,16 +470,16 @@ function buildCrosswordStage(difficulty: DifficultyLevel): StageDefinition {
   return {
     id: `crossword-${difficulty}`,
     miniGameType: "crucigrama",
-    title: "Crucigrama de acceso",
-    prompt: "Completa la palabra clave dentro de la cuadrícula.",
-    instructions: "Toca una casilla y coloca una letra del banco.",
-    pointsLabel: "Completa la palabra secreta",
+    title: "Archivo cifrado",
+    prompt: "Reconstruye el termino central usando una pista breve y un banco de letras contaminado.",
+    instructions: "El banco incluye señuelos. Usa cada letra con criterio: no hay piezas infinitas.",
+    pointsLabel: `${config.answer.length} letras con ruido`,
     crossword: {
       size: config.size,
       blocks,
       slots,
       clue: config.clue,
-      letterBank: config.bank,
+      letterBank: buildCrosswordLetterBank(config.answer, config.distractors),
     },
     answer: normalizeText(config.answer),
   };
@@ -364,15 +488,21 @@ function buildCrosswordStage(difficulty: DifficultyLevel): StageDefinition {
 function buildWordSearchStage(difficulty: DifficultyLevel): StageDefinition {
   const config = wordSearchByDifficulty[difficulty];
   validateWordSearchConfig(difficulty, config);
+  const grid = buildWordSearchGrid(config);
+  const words = config.paths.map((entry) => entry.word);
   return {
     id: `wordsearch-${difficulty}`,
     miniGameType: "sopa",
-    title: "Sopa de letras nocturna",
-    prompt: "Encuentra todas las palabras escondidas del tablero.",
-    instructions: "Selecciona letras en la rejilla y confirma cada palabra.",
-    pointsLabel: `${config.words.length} palabras ocultas`,
-    wordSearch: config,
-    answer: config.words.map(normalizeText).sort().join("|"),
+    title: "Matriz de rastreo",
+    prompt: "Rastrea terminos reales dentro de la matriz. Las rutas pueden girar, cruzarse y engañar.",
+    instructions: "Construye cada palabra siguiendo una trayectoria continua. Si rompes la ruta, no cuenta.",
+    pointsLabel: `${words.length} rutas validas`,
+    wordSearch: {
+      grid,
+      words,
+      paths: config.paths,
+    },
+    answer: words.map(normalizeText).sort().join("|"),
   };
 }
 
@@ -381,14 +511,18 @@ function buildDrawingStage(difficulty: DifficultyLevel, drawerPlayerId: string):
   return {
     id: `drawing-${difficulty}`,
     miniGameType: "dibujo",
-    title: "Dibujo en clave",
-    prompt: "Una persona dibuja en vivo y el resto adivina la pieza secreta.",
-    instructions: "El dibujante usa el lienzo. Los demas eligen una respuesta.",
-    pointsLabel: "Adivina antes de cerrar la ronda",
+    title: "Testigo visual",
+    prompt: "Una persona ilustra la evidencia sin hablar. El resto debe identificarla con precision.",
+    instructions:
+      config.answerMode === "text"
+        ? "El dibujante ilustra. El resto responde por texto, sin opciones guiadas."
+        : "El dibujante ilustra. El resto discrimina entre opciones visualmente cercanas.",
+    pointsLabel: config.answerMode === "text" ? "Respuesta abierta" : `${config.options.length} opciones similares`,
     drawing: {
       drawerPlayerId,
       promptForDrawer: config.prompt,
       options: config.options,
+      answerMode: config.answerMode,
       strokes: [] as DrawingStroke[],
       brushPalette,
     },
@@ -403,14 +537,14 @@ function buildMemoryStage(difficulty: DifficultyLevel): StageDefinition {
     return [cardA, cardB];
   });
 
-  const shuffled = [...cards].sort((left, right) => left.pairId.localeCompare(right.pairId) || left.id.localeCompare(right.id));
+  const shuffled = shuffleArray(cards);
 
   return {
     id: `memory-${difficulty}`,
     miniGameType: "memorama",
-    title: "Memorama de reliquias",
-    prompt: "Voltea las cartas y encuentra todas las parejas ilustradas.",
-    instructions: "Toca dos cartas por turno hasta limpiar el tablero.",
+    title: "Mesa de evidencias",
+    prompt: "Relaciona cada evidencia con su pareja en un tablero que cambia de orden en cada partida.",
+    instructions: "Memoriza ubicaciones reales; las cartas no salen ordenadas ni por pareja ni por categoria.",
     pointsLabel: `${shuffled.length / 2} parejas por completar`,
     memory: {
       cards: shuffled,

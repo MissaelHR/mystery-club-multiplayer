@@ -16,12 +16,32 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+function buildLetterCounts(letters: string[]) {
+  return letters.reduce((accumulator, letter) => {
+    accumulator.set(letter, (accumulator.get(letter) ?? 0) + 1);
+    return accumulator;
+  }, new Map<string, number>());
+}
+
 function isSameCell(left: CellPoint, right: CellPoint) {
   return left[0] === right[0] && left[1] === right[1];
 }
 
 function matchesWordPath(selection: CellPoint[], path: CellPoint[]) {
   if (selection.length !== path.length) {
+    return false;
+  }
+
+  const directMatch = selection.every((cell, index) => isSameCell(cell, path[index]));
+  if (directMatch) {
+    return true;
+  }
+
+  return selection.every((cell, index) => isSameCell(cell, path[path.length - 1 - index]));
+}
+
+function matchesWordPathPrefix(selection: CellPoint[], path: CellPoint[]) {
+  if (selection.length > path.length) {
     return false;
   }
 
@@ -136,20 +156,24 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
     drawStrokes(canvasRef.current, stage.drawing.strokes);
   }, [stage?.drawing]);
 
-  if (!stage) {
-    return null;
-  }
-
   const submittedAlready = Boolean(me?.answeredCurrentStage);
-  const isDrawer = stage.miniGameType === "dibujo" && stage.drawing?.drawerPlayerId === me?.id;
+  const isDrawer = stage?.miniGameType === "dibujo" && stage.drawing?.drawerPlayerId === me?.id;
+  const crosswordBankCounts = useMemo(
+    () => (stage?.crossword ? buildLetterCounts(stage.crossword.letterBank) : new Map<string, number>()),
+    [stage?.crossword],
+  );
+  const crosswordPlacedCounts = useMemo(
+    () => buildLetterCounts(crosswordLetters.filter(Boolean)),
+    [crosswordLetters],
+  );
   const wordSearchSelection = useMemo(() => {
-    if (!stage.wordSearch) {
+    if (!stage?.wordSearch) {
       return "";
     }
     return selectedWordCells.map(([row, col]) => stage.wordSearch?.grid[row][col] ?? "").join("");
-  }, [selectedWordCells, stage.wordSearch]);
+  }, [selectedWordCells, stage?.wordSearch]);
   const foundWordCells = useMemo(() => {
-    if (!stage.wordSearch) {
+    if (!stage?.wordSearch) {
       return new Set<string>();
     }
 
@@ -159,21 +183,34 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
       }
       return accumulator;
     }, new Set<string>());
-  }, [foundWords, stage.wordSearch]);
+  }, [foundWords, stage?.wordSearch]);
 
   const memoryAnswer = useMemo(() => [...memoryMatched].sort().join("|"), [memoryMatched]);
 
   const crosswordAnswer = useMemo(() => crosswordLetters.join(""), [crosswordLetters]);
   const sopaAnswer = useMemo(() => [...foundWords].sort().join("|"), [foundWords]);
+  const crosswordActiveLetter = crosswordLetters[selectedCrosswordCell] ?? "";
+  const unresolvedWordPaths = useMemo(
+    () => (stage?.wordSearch ? stage.wordSearch.paths.filter((entry) => !foundWords.includes(entry.word.toUpperCase())) : []),
+    [foundWords, stage?.wordSearch],
+  );
 
   const handleCrosswordLetter = (letter: string) => {
+    const bankTotal = crosswordBankCounts.get(letter) ?? 0;
+    const placedTotal = crosswordPlacedCounts.get(letter) ?? 0;
+    const effectivePlacedTotal = crosswordActiveLetter === letter ? placedTotal - 1 : placedTotal;
+
+    if (effectivePlacedTotal >= bankTotal) {
+      return;
+    }
+
     setCrosswordLetters((current) => {
       const next = [...current];
       next[selectedCrosswordCell] = letter;
       return next;
     });
     setSelectedCrosswordCell((current) =>
-      stage.crossword ? Math.min(current + 1, stage.crossword.slots.length - 1) : current,
+      stage?.crossword ? Math.min(current + 1, stage.crossword.slots.length - 1) : current,
     );
   };
 
@@ -187,16 +224,33 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
 
   const toggleWordSearchCell = (cell: CellPoint) => {
     setSelectedWordCells((current) => {
-      const exists = current.some(([row, col]) => row === cell[0] && col === cell[1]);
-      if (exists) {
-        return current.filter(([row, col]) => row !== cell[0] || col !== cell[1]);
+      if (foundWordCells.has(`${cell[0]}-${cell[1]}`)) {
+        return current;
       }
-      return [...current, cell];
+
+      const lastCell = current[current.length - 1];
+      if (lastCell && isSameCell(lastCell, cell)) {
+        return current.slice(0, -1);
+      }
+
+      const existsEarlier = current.some(([row, col]) => row === cell[0] && col === cell[1]);
+      if (existsEarlier) {
+        return current;
+      }
+
+      const candidate = [...current, cell];
+      const matchesAnyPrefix = unresolvedWordPaths.some((entry) => matchesWordPathPrefix(candidate, entry.cells));
+
+      if (!matchesAnyPrefix) {
+        return current;
+      }
+
+      return candidate;
     });
   };
 
   const lockFoundWord = () => {
-    if (!stage.wordSearch) {
+    if (!stage?.wordSearch) {
       return;
     }
 
@@ -213,7 +267,7 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
   };
 
   const handleMemoryFlip = (cardId: string) => {
-    if (!stage.memory || memoryFlipped.includes(cardId) || submittedAlready) {
+    if (!stage?.memory || memoryFlipped.includes(cardId) || submittedAlready) {
       return;
     }
 
@@ -240,7 +294,7 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
   };
 
   const submitCurrentStage = () => {
-    if (submittedAlready || isDrawer) {
+    if (!stage || submittedAlready || isDrawer) {
       return;
     }
 
@@ -258,10 +312,10 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
         onSubmit(sopaAnswer);
         break;
       case "dibujo":
-        if (!drawingAnswer) {
+        if (!drawingAnswer.trim()) {
           return;
         }
-        onSubmit(drawingAnswer);
+        onSubmit(drawingAnswer.trim());
         break;
       case "memorama":
         if (!stage.memory || memoryMatched.length !== stage.memory.cards.length / 2) {
@@ -273,10 +327,10 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
   };
 
   const currentSelectionReady =
-    (stage.miniGameType === "crucigrama" && crosswordLetters.every(Boolean)) ||
-    (stage.miniGameType === "sopa" && stage.wordSearch && foundWords.length === stage.wordSearch.words.length) ||
-    (stage.miniGameType === "dibujo" && Boolean(drawingAnswer)) ||
-    (stage.miniGameType === "memorama" && stage.memory && memoryMatched.length === stage.memory.cards.length / 2);
+    (stage?.miniGameType === "crucigrama" && crosswordLetters.every(Boolean)) ||
+    (stage?.miniGameType === "sopa" && stage.wordSearch && foundWords.length === stage.wordSearch.words.length) ||
+    (stage?.miniGameType === "dibujo" && Boolean(drawingAnswer.trim())) ||
+    (stage?.miniGameType === "memorama" && stage.memory && memoryMatched.length === stage.memory.cards.length / 2);
 
   const handlePointerDown = (event: PointerEvent<HTMLCanvasElement>) => {
     if (!isDrawer || !canvasRef.current) {
@@ -333,6 +387,10 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
     activePointerIdRef.current = null;
     drawingPointsRef.current = [];
   };
+
+  if (!stage) {
+    return null;
+  }
 
   return (
     <section className="panel-strong overflow-hidden p-5 md:p-8">
@@ -408,14 +466,23 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
 
               <div className="mt-4 flex flex-wrap gap-2">
                 {crossword.letterBank.map((letter, index) => (
-                  <button
-                    key={`${letter}-${index}`}
-                    type="button"
-                    onClick={() => handleCrosswordLetter(letter)}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-parchment transition hover:bg-white/10"
-                  >
-                    {letter}
-                  </button>
+                  (() => {
+                    const available =
+                      (crosswordBankCounts.get(letter) ?? 0) -
+                      ((crosswordPlacedCounts.get(letter) ?? 0) - (crosswordActiveLetter === letter ? 1 : 0));
+
+                    return (
+                      <button
+                        key={`${letter}-${index}`}
+                        type="button"
+                        disabled={available <= 0}
+                        onClick={() => handleCrosswordLetter(letter)}
+                        className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-parchment transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35"
+                      >
+                        {letter}
+                      </button>
+                    );
+                  })()
                 ))}
                 <button
                   type="button"
@@ -462,7 +529,7 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
                 <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/70">Seleccion actual</p>
                 <p className="mt-2 text-xl tracking-[0.3em] text-parchment">{wordSearchSelection || "..."}</p>
                 <p className="mt-2 text-sm leading-6 text-cyan-50/70">
-                  Marca la ruta exacta de cada palabra. Puede doblar en esquinas si el nivel lo pide.
+                  La seleccion debe seguir un recorrido continuo valido. Solo puedes avanzar o retroceder sobre la ruta.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
@@ -552,28 +619,46 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
                   </div>
                 </div>
               ) : (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {stage.drawing.options.map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setDrawingAnswer(option)}
-                      className={`rounded-[1.5rem] border px-4 py-4 text-left transition ${
-                        drawingAnswer === option
-                          ? "border-gold/60 bg-gold/15 text-parchment"
-                          : "border-white/10 bg-white/5 text-mist/85 hover:bg-white/10"
-                      }`}
-                    >
-                      <p className="text-base font-semibold">{option}</p>
-                    </button>
-                  ))}
-                </div>
+                <>
+                  {stage.drawing.answerMode === "options" ? (
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      {stage.drawing.options.map((option) => (
+                        <button
+                          key={option}
+                          type="button"
+                          onClick={() => setDrawingAnswer(option)}
+                          className={`rounded-[1.5rem] border px-4 py-4 text-left transition ${
+                            drawingAnswer === option
+                              ? "border-gold/60 bg-gold/15 text-parchment"
+                              : "border-white/10 bg-white/5 text-mist/85 hover:bg-white/10"
+                          }`}
+                        >
+                          <p className="text-base font-semibold">{option}</p>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4">
+                      <p className="text-xs uppercase tracking-[0.25em] text-mist/55">Respuesta abierta</p>
+                      <input
+                        type="text"
+                        value={drawingAnswer}
+                        onChange={(event) => setDrawingAnswer(event.target.value)}
+                        placeholder="Escribe lo que crees que esta dibujando"
+                        className="mt-3 w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-base text-parchment outline-none transition placeholder:text-mist/35 focus:border-gold/45"
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           ) : null}
 
           {stage.miniGameType === "memorama" && stage.memory ? (
-            <div className="mt-6 grid grid-cols-4 gap-3">
+            <div
+              className="mt-6 grid gap-3"
+              style={{ gridTemplateColumns: `repeat(${stage.memory.cards.length >= 18 ? 5 : 4}, minmax(0, 1fr))` }}
+            >
               {stage.memory.cards.map((card) => {
                 const opened = memoryFlipped.includes(card.id) || memoryMatched.includes(card.pairId);
                 return (

@@ -23,9 +23,9 @@ export interface MiniGameCatalogItem {
 }
 
 export const DIFFICULTY_OPTIONS: DifficultyOption[] = [
-  { id: "explorador", title: "Explorador", summary: "Tableros cortos y rondas rapidas.", badge: "Suave" },
-  { id: "agente", title: "Agente", summary: "Mas piezas, mas rutas y pistas cruzadas.", badge: "Reto" },
-  { id: "leyenda", title: "Leyenda", summary: "Version completa con maxima presion.", badge: "Pro" },
+  { id: "explorador", title: "Explorador", summary: "Pistas directas, pocas distracciones y patrones cortos.", badge: "Base" },
+  { id: "agente", title: "Agente", summary: "Mas ruido visual, rutas mixtas y opciones cercanas.", badge: "Tactico" },
+  { id: "leyenda", title: "Leyenda", summary: "Maxima carga cognitiva, minima ayuda y errores caros.", badge: "Staff" },
 ];
 
 export const MINI_GAME_CATALOG: MiniGameCatalogItem[] = [
@@ -71,6 +71,7 @@ export interface DrawingPublicData {
   drawerPlayerId: string;
   promptForDrawer?: string;
   options: string[];
+  answerMode: "options" | "text";
   strokes: DrawingStroke[];
   brushPalette: string[];
 }
