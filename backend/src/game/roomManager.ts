@@ -9,7 +9,6 @@ import {
   MIN_PLAYERS,
   MiniGameType,
   PlayerPublic,
-  ROOM_CREATE_PASSWORD,
   ROOM_TTL_MS,
   RoomState,
   StageDefinition,
@@ -17,6 +16,8 @@ import {
   WinnerSummary,
 } from "../../../shared/game";
 import { buildStageQueue } from "./rounds";
+
+const ROOM_CREATE_PASSWORD = "unasletas";
 
 interface PlayerInternal {
   id: string;

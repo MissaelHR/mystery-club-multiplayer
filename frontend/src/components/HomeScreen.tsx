@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { DIFFICULTY_OPTIONS, GAME_SUBTITLE, GAME_TITLE, MINI_GAME_CATALOG, ROOM_CREATE_PASSWORD } from "@shared/game";
+import { DIFFICULTY_OPTIONS, GAME_SUBTITLE, GAME_TITLE, MINI_GAME_CATALOG } from "@shared/game";
 
 interface HomeScreenProps {
   error: string | null;
@@ -77,10 +77,12 @@ export function HomeScreen({ error, onCreateRoom, onJoinRoom }: HomeScreenProps)
           <label className="mt-4 block text-sm text-mist/80">
             Contraseña de anfitrión
             <input
+              type="password"
               value={createPassword}
               onChange={(event) => setCreatePassword(event.target.value)}
               className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-base text-white outline-none transition focus:border-gold/50"
-              placeholder={ROOM_CREATE_PASSWORD}
+              placeholder="Ingresa la contraseña"
+              autoComplete="off"
             />
           </label>
 

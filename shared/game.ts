@@ -1,7 +1,6 @@
 export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 6;
 export const ROOM_TTL_MS = 30 * 60 * 1000;
-export const ROOM_CREATE_PASSWORD = "unasletas";
 export const GAME_TITLE = "UNASLETAS AMANDA BLACK";
 export const GAME_SUBTITLE = "Crucigramas, rutas ocultas, dibujos y memorias en una mision cooperativa.";
 
