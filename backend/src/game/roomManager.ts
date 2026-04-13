@@ -33,6 +33,7 @@ interface Submission {
   answer: string;
   isCorrect: boolean;
   pointsEarned: number;
+  answeredAt: number;
 }
 
 interface RoomInternal {
@@ -46,6 +47,7 @@ interface RoomInternal {
   lastStageVariantIds: Partial<Record<DifficultyLevel, Partial<Record<MiniGameType, string>>>>;
   currentStageIndex: number;
   stage: StageDefinition | null;
+  stageStartedAt: number | null;
   submissions: Map<string, Submission>;
   finished: RoomState["finished"];
   lastActivityAt: number;
@@ -172,6 +174,66 @@ function getStagePoints(room: RoomInternal, stage: StageDefinition) {
   return difficultyBonus[room.selectedDifficulty] + gameBonus[stage.miniGameType] + room.currentStageIndex * 20;
 }
 
+function getStageTimeBudgetMs(room: RoomInternal, stage: StageDefinition) {
+  const difficultyBudget: Record<DifficultyLevel, number> = {
+    explorador: 70000,
+    agente: 55000,
+    leyenda: 45000,
+  };
+
+  const gameModifier: Record<MiniGameType, number> = {
+    crucigrama: 1,
+    sopa: 1.15,
+    dibujo: 0.95,
+    memorama: 1.05,
+  };
+
+  return Math.round(difficultyBudget[room.selectedDifficulty] * gameModifier[stage.miniGameType]);
+}
+
+function clampScore(value: number) {
+  return Math.max(0, value);
+}
+
+function getCorrectAnswerPlacement(room: RoomInternal) {
+  return [...room.submissions.values()].filter((submission) => submission.isCorrect).length;
+}
+
+function computeSubmissionPoints(
+  room: RoomInternal,
+  stage: StageDefinition,
+  answeredAt: number,
+  isCorrect: boolean,
+) {
+  const basePoints = getStagePoints(room, stage);
+  const stageStartedAt = room.stageStartedAt ?? answeredAt;
+  const elapsedMs = Math.max(0, answeredAt - stageStartedAt);
+  const stageBudgetMs = getStageTimeBudgetMs(room, stage);
+  const elapsedRatio = Math.min(1, elapsedMs / stageBudgetMs);
+
+  if (!isCorrect) {
+    return -Math.max(20, Math.floor(basePoints * 0.18));
+  }
+
+  const placement = getCorrectAnswerPlacement(room);
+  const placementBonus = [45, 25, 10][placement] ?? 0;
+  const speedBonus = Math.max(0, Math.floor(basePoints * 0.45 * (1 - elapsedRatio)));
+  return basePoints + placementBonus + speedBonus;
+}
+
+function computeDrawerPoints(room: RoomInternal, stage: StageDefinition) {
+  const basePoints = getStagePoints(room, stage);
+  const correctGuessCount = [...room.submissions.entries()].filter(
+    ([playerId, submission]) => playerId !== getDrawingDrawerId(stage) && submission.isCorrect,
+  ).length;
+
+  if (correctGuessCount === 0) {
+    return 0;
+  }
+
+  return Math.floor(basePoints * 0.35 + Math.min(correctGuessCount, 3) * 18);
+}
+
 function buildFinalResults(room: RoomInternal) {
   return sortPlayers(room.players.values()).map((player) => ({
     playerId: player.id,
@@ -216,6 +278,7 @@ function advanceStage(room: RoomInternal) {
   }
 
   room.stage = room.stageQueue[room.currentStageIndex];
+  room.stageStartedAt = Date.now();
   room.phase = "playing";
   room.finished = null;
   resetAnswers(room);
@@ -229,6 +292,7 @@ function advanceStage(room: RoomInternal) {
         answer: "DIBUJANTE",
         isCorrect: true,
         pointsEarned: 0,
+        answeredAt: room.stageStartedAt ?? Date.now(),
       });
     }
   }
@@ -288,6 +352,7 @@ export function createRoom(playerName: string, difficulty: DifficultyLevel, sock
     lastStageVariantIds: {},
     currentStageIndex: 0,
     stage: null,
+    stageStartedAt: null,
     submissions: new Map(),
     finished: null,
     lastActivityAt: Date.now(),
@@ -476,6 +541,7 @@ export function configureGame(room: RoomInternal, difficulty: DifficultyLevel, p
   room.phase = "lobby";
   room.currentStageIndex = 0;
   room.stage = null;
+  room.stageStartedAt = null;
   room.finished = null;
   room.lastActivityAt = Date.now();
   resetAnswers(room);
@@ -512,6 +578,7 @@ export function restartGame(room: RoomInternal) {
 export function endGame(room: RoomInternal) {
   room.phase = "finished";
   room.stage = null;
+  room.stageStartedAt = null;
   room.finished = {
     outcome: "stopped",
     headline: "Partida finalizada",
@@ -576,18 +643,18 @@ export function submitAnswer(room: RoomInternal, playerId: string, rawAnswer: st
   const normalizedAnswer = normalizeText(rawAnswer);
   const expectedAnswer = normalizeText(room.stage.answer);
   const isCorrect = normalizedAnswer === expectedAnswer;
-  const pointsEarned = isCorrect ? getStagePoints(room, room.stage) : 0;
+  const answeredAt = Date.now();
+  const pointsEarned = computeSubmissionPoints(room, room.stage, answeredAt, isCorrect);
 
   player.answeredCurrentStage = true;
-  if (isCorrect) {
-    player.score += pointsEarned;
-  }
+  player.score = clampScore(player.score + pointsEarned);
   room.submissions.set(player.id, {
     answer: rawAnswer,
     isCorrect,
     pointsEarned,
+    answeredAt,
   });
-  room.lastActivityAt = Date.now();
+  room.lastActivityAt = answeredAt;
 
   const connectedPlayers = getConnectedPlayers(room);
   if (connectedPlayers.length > 0 && connectedPlayers.every((candidate) => candidate.answeredCurrentStage)) {
@@ -598,12 +665,13 @@ export function submitAnswer(room: RoomInternal, playerId: string, rawAnswer: st
       );
 
       if (drawer && anyCorrectGuess) {
-        const drawerPoints = Math.floor(getStagePoints(room, room.stage) * 0.6);
-        drawer.score += drawerPoints;
+        const drawerPoints = computeDrawerPoints(room, room.stage);
+        drawer.score = clampScore(drawer.score + drawerPoints);
         room.submissions.set(drawer.id, {
           answer: "DIBUJO ENTREGADO",
           isCorrect: true,
           pointsEarned: drawerPoints,
+          answeredAt: Date.now(),
         });
       }
     }

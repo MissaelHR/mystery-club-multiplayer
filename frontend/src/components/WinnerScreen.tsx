@@ -12,6 +12,9 @@ export function WinnerScreen({ room, me, onRestart }: WinnerScreenProps) {
   }
 
   const champion = room.winners[0];
+  const podium = room.winners.slice(0, 3);
+  const secondPlace = podium[1];
+  const thirdPlace = podium[2];
 
   return (
     <section className="panel-strong p-5 md:p-8">
@@ -22,10 +25,45 @@ export function WinnerScreen({ room, me, onRestart }: WinnerScreenProps) {
       <p className="mt-4 max-w-3xl text-base leading-8 text-mist/85 md:text-lg">{room.finished.explanation}</p>
 
       {champion ? (
-        <div className="mt-6 rounded-[2rem] border border-gold/25 bg-gold/10 p-6">
-          <p className="text-sm uppercase tracking-[0.25em] text-gold/75">Ganador</p>
-          <h3 className="mt-2 font-display text-4xl text-parchment">{champion.name}</h3>
-          <p className="mt-2 text-xl text-gold">{champion.score} puntos</p>
+        <div className="mt-8 rounded-[2.25rem] border border-white/10 bg-white/5 px-4 py-8">
+          <div className="mx-auto flex max-w-5xl items-end justify-center gap-3 md:gap-6">
+            {secondPlace ? (
+              <div className="flex w-[30%] flex-col items-center">
+                <div className="mb-4 w-full rounded-[1.75rem] border border-white/10 bg-slate-950/60 p-4 text-center">
+                  <p className="text-xs uppercase tracking-[0.25em] text-mist/55">2do lugar</p>
+                  <p className="mt-2 font-display text-3xl text-parchment">{secondPlace.name}</p>
+                  <p className="mt-2 text-lg text-slate-200">{secondPlace.score} pts</p>
+                </div>
+                <div className="flex h-28 w-full items-center justify-center rounded-t-[1.75rem] bg-slate-300/80 text-3xl font-black text-slate-950">
+                  2
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex w-[34%] flex-col items-center">
+              <div className="mb-4 w-full rounded-[2rem] border border-gold/30 bg-gold/10 p-5 text-center shadow-glow">
+                <p className="text-xs uppercase tracking-[0.3em] text-gold/75">Primer lugar</p>
+                <p className="mt-3 font-display text-4xl text-parchment md:text-5xl">{champion.name}</p>
+                <p className="mt-3 text-2xl text-gold">{champion.score} pts</p>
+              </div>
+              <div className="flex h-40 w-full items-center justify-center rounded-t-[2rem] bg-gold text-4xl font-black text-slate-950">
+                1
+              </div>
+            </div>
+
+            {thirdPlace ? (
+              <div className="flex w-[30%] flex-col items-center">
+                <div className="mb-4 w-full rounded-[1.75rem] border border-white/10 bg-slate-950/60 p-4 text-center">
+                  <p className="text-xs uppercase tracking-[0.25em] text-mist/55">3er lugar</p>
+                  <p className="mt-2 font-display text-3xl text-parchment">{thirdPlace.name}</p>
+                  <p className="mt-2 text-lg text-amber-200">{thirdPlace.score} pts</p>
+                </div>
+                <div className="flex h-20 w-full items-center justify-center rounded-t-[1.75rem] bg-amber-700/90 text-3xl font-black text-amber-50">
+                  3
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
