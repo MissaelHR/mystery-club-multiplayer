@@ -95,6 +95,16 @@ function getStagePoints(room: RoomInternal) {
   return difficultyBonus[room.selectedDifficulty] + room.currentStageIndex * 25;
 }
 
+function buildFinalResults(room: RoomInternal) {
+  return sortPlayers(room.players.values()).map((player) => ({
+    playerId: player.id,
+    playerName: player.name,
+    answer: null,
+    isCorrect: false,
+    pointsEarned: player.score,
+  }));
+}
+
 function toStagePublic(stage: StageDefinition | null): StagePublic | null {
   if (!stage) {
     return null;
@@ -105,6 +115,8 @@ function toStagePublic(stage: StageDefinition | null): StagePublic | null {
     title: stage.title,
     prompt: stage.prompt,
     inputLabel: stage.inputLabel,
+    mode: stage.mode,
+    hint: stage.hint,
     answerKind: stage.answerKind,
     options: stage.options,
     memorySequence: stage.memorySequence,
@@ -144,15 +156,9 @@ function advanceStage(room: RoomInternal) {
     room.stage = null;
     room.finished = {
       outcome: "victory",
-      headline: "Arcade completado",
+      headline: "Mision completada",
       explanation: "La misión siguió hasta el final. Gana quien sumó más puntos.",
-      stageResults: sortPlayers(room.players.values()).map((player) => ({
-        playerId: player.id,
-        playerName: player.name,
-        answer: null,
-        isCorrect: false,
-        pointsEarned: player.score,
-      })),
+      stageResults: buildFinalResults(room),
     };
     return;
   }
@@ -399,6 +405,20 @@ export function restartGame(room: RoomInternal) {
   for (const player of room.players.values()) {
     player.score = 0;
   }
+  return { room };
+}
+
+export function endGame(room: RoomInternal) {
+  room.phase = "finished";
+  room.stage = null;
+  room.finished = {
+    outcome: "stopped",
+    headline: "Partida finalizada",
+    explanation: "El anfitrion cerro la sesion y el marcador quedo fijado en vivo.",
+    stageResults: buildFinalResults(room),
+  };
+  room.lastActivityAt = Date.now();
+  resetAnswers(room);
   return { room };
 }
 

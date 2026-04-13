@@ -8,6 +8,7 @@ import {
 import {
   configureGame,
   createRoom,
+  endGame,
   expireInactiveRooms,
   getRoom,
   joinRoom,
@@ -185,6 +186,22 @@ export function registerSocketHandlers(io: MysteryServer) {
         return;
       }
 
+      emitRoom(io, room.code);
+    });
+
+    socket.on("game:end", ({ roomCode }) => {
+      const room = getRoom(roomCode);
+      if (!room) {
+        emitError(socket, "Sala no encontrada.");
+        return;
+      }
+
+      if (room.hostId !== findPlayerIdBySocket(roomCode, socket.id)) {
+        emitError(socket, "Solo el anfitrión puede finalizar la partida.");
+        return;
+      }
+
+      endGame(room);
       emitRoom(io, room.code);
     });
 

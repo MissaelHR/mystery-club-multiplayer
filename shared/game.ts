@@ -2,7 +2,7 @@ export const MIN_PLAYERS = 2;
 export const MAX_PLAYERS = 6;
 export const ROOM_TTL_MS = 30 * 60 * 1000;
 export const GAME_TITLE = "UNASLETAS AMANDA BLACK";
-export const GAME_SUBTITLE = "Pilota, esquiva trampas y llega hasta la azotea.";
+export const GAME_SUBTITLE = "Una carrera arcade de reflejos, memoria y rutas secretas.";
 
 export type GamePhase = "lobby" | "playing" | "finished";
 export type DifficultyLevel = "explorador" | "agente" | "leyenda";
@@ -49,6 +49,8 @@ export interface StagePublic {
   title: string;
   prompt: string;
   inputLabel: string;
+  mode: "radar" | "memory" | "route" | "signal";
+  hint: string;
   answerKind: "single-choice" | "sequence";
   options?: string[];
   memorySequence?: string[];
@@ -69,7 +71,7 @@ export interface StageResult {
 }
 
 export interface GameFinishedState {
-  outcome: "victory";
+  outcome: "victory" | "stopped";
   headline: string;
   explanation: string;
   stageResults: StageResult[];
@@ -161,6 +163,7 @@ export interface ClientToServerEvents {
   "room:kick": (payload: KickPlayerPayload) => void;
   "game:configure": (payload: ConfigureGamePayload) => void;
   "game:start": (payload: RoomPayload) => void;
+  "game:end": (payload: RoomPayload) => void;
   "game:restart": (payload: RoomPayload) => void;
   "round:submit": (payload: SubmitAnswerPayload) => void;
 }

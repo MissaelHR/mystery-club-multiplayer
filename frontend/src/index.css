@@ -5,9 +5,9 @@
 :root {
   color: #f8fafc;
   background:
-    radial-gradient(circle at top, rgba(59, 31, 59, 0.65), transparent 45%),
-    linear-gradient(180deg, #0f172a 0%, #111827 40%, #1f2937 100%);
-  font-family: "Trebuchet MS", Verdana, sans-serif;
+    radial-gradient(circle at top, rgba(13, 148, 136, 0.12), transparent 40%),
+    linear-gradient(180deg, #06131c 0%, #0d1b2a 46%, #091018 100%);
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
 }
 
 body {
@@ -15,9 +15,11 @@ body {
   min-height: 100vh;
   color: #f8fafc;
   background:
-    radial-gradient(circle at 10% 20%, rgba(216, 178, 92, 0.12), transparent 20%),
-    radial-gradient(circle at 80% 0%, rgba(167, 139, 250, 0.12), transparent 25%),
-    linear-gradient(180deg, #0f172a 0%, #111827 60%, #020617 100%);
+    radial-gradient(circle at 8% 18%, rgba(216, 178, 92, 0.15), transparent 18%),
+    radial-gradient(circle at 90% 8%, rgba(34, 211, 238, 0.13), transparent 20%),
+    radial-gradient(circle at 60% 85%, rgba(16, 185, 129, 0.08), transparent 22%),
+    linear-gradient(180deg, #08131f 0%, #0d1b2a 52%, #050b12 100%);
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
 }
 
 #root {
@@ -25,10 +27,9 @@ body {
 }
 
 .panel {
-  @apply rounded-3xl border border-white/10 bg-white/10 backdrop-blur-xl;
+  @apply rounded-3xl border border-white/10 bg-white/[0.08] backdrop-blur-xl;
 }
 
 .panel-strong {
-  @apply rounded-3xl border border-gold/25 bg-slate-950/60 shadow-glow backdrop-blur-xl;
+  @apply rounded-3xl border border-gold/20 bg-slate-950/65 shadow-glow backdrop-blur-xl;
 }
-
