@@ -12,6 +12,27 @@ interface RoundScreenProps {
 
 type CellPoint = [number, number];
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function isSameCell(left: CellPoint, right: CellPoint) {
+  return left[0] === right[0] && left[1] === right[1];
+}
+
+function matchesWordPath(selection: CellPoint[], path: CellPoint[]) {
+  if (selection.length !== path.length) {
+    return false;
+  }
+
+  const directMatch = selection.every((cell, index) => isSameCell(cell, path[index]));
+  if (directMatch) {
+    return true;
+  }
+
+  return selection.every((cell, index) => isSameCell(cell, path[path.length - 1 - index]));
+}
+
 function drawStrokes(canvas: HTMLCanvasElement, strokes: DrawingStroke[]) {
   const ctx = canvas.getContext("2d");
   if (!ctx) {
@@ -23,20 +44,40 @@ function drawStrokes(canvas: HTMLCanvasElement, strokes: DrawingStroke[]) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   for (const stroke of strokes) {
-    if (stroke.points.length < 2) {
+    if (stroke.points.length === 0) {
       continue;
     }
+    const firstPoint = stroke.points[0];
+    const firstX = firstPoint.x * canvas.width;
+    const firstY = firstPoint.y * canvas.height;
+
+    if (stroke.points.length === 1) {
+      ctx.beginPath();
+      ctx.fillStyle = stroke.color;
+      ctx.arc(firstX, firstY, Math.max(stroke.size / 2, 2), 0, Math.PI * 2);
+      ctx.fill();
+      continue;
+    }
+
     ctx.beginPath();
     ctx.strokeStyle = stroke.color;
     ctx.lineWidth = stroke.size;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+    ctx.moveTo(firstX, firstY);
     for (const point of stroke.points.slice(1)) {
-      ctx.lineTo(point.x, point.y);
+      ctx.lineTo(point.x * canvas.width, point.y * canvas.height);
     }
     ctx.stroke();
   }
+}
+
+function getCanvasPoint(canvas: HTMLCanvasElement, event: PointerEvent<HTMLCanvasElement>) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: clamp((event.clientX - rect.left) / rect.width, 0, 1),
+    y: clamp((event.clientY - rect.top) / rect.height, 0, 1),
+  };
 }
 
 function getMiniGameLabel(stage: StagePublic) {
@@ -67,6 +108,7 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingPointsRef = useRef<Array<{ x: number; y: number }>>([]);
   const isPointerDownRef = useRef(false);
+  const activePointerIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!stage) {
@@ -106,6 +148,18 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
     }
     return selectedWordCells.map(([row, col]) => stage.wordSearch?.grid[row][col] ?? "").join("");
   }, [selectedWordCells, stage.wordSearch]);
+  const foundWordCells = useMemo(() => {
+    if (!stage.wordSearch) {
+      return new Set<string>();
+    }
+
+    return stage.wordSearch.paths.reduce((accumulator, entry) => {
+      if (foundWords.includes(entry.word.toUpperCase())) {
+        entry.cells.forEach(([row, col]) => accumulator.add(`${row}-${col}`));
+      }
+      return accumulator;
+    }, new Set<string>());
+  }, [foundWords, stage.wordSearch]);
 
   const memoryAnswer = useMemo(() => [...memoryMatched].sort().join("|"), [memoryMatched]);
 
@@ -142,14 +196,20 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
   };
 
   const lockFoundWord = () => {
-    const normalized = wordSearchSelection.toUpperCase();
     if (!stage.wordSearch) {
       return;
     }
-    if (stage.wordSearch.words.some((word) => word.toUpperCase() === normalized) && !foundWords.includes(normalized)) {
-      setFoundWords((current) => [...current, normalized]);
-      setSelectedWordCells([]);
+
+    const matchedEntry = stage.wordSearch.paths.find(
+      (entry) => !foundWords.includes(entry.word.toUpperCase()) && matchesWordPath(selectedWordCells, entry.cells),
+    );
+
+    if (!matchedEntry) {
+      return;
     }
+
+    setFoundWords((current) => [...current, matchedEntry.word.toUpperCase()]);
+    setSelectedWordCells([]);
   };
 
   const handleMemoryFlip = (cardId: string) => {
@@ -223,27 +283,43 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
       return;
     }
 
-    const rect = canvasRef.current.getBoundingClientRect();
+    event.preventDefault();
+    canvasRef.current.setPointerCapture(event.pointerId);
     isPointerDownRef.current = true;
-    drawingPointsRef.current = [{ x: event.clientX - rect.left, y: event.clientY - rect.top }];
-  };
-
-  const handlePointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawer || !canvasRef.current || !isPointerDownRef.current) {
-      return;
-    }
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    drawingPointsRef.current = [...drawingPointsRef.current, { x: event.clientX - rect.left, y: event.clientY - rect.top }];
+    activePointerIdRef.current = event.pointerId;
+    drawingPointsRef.current = [getCanvasPoint(canvasRef.current, event)];
     drawStrokes(canvasRef.current, [
       ...(stage.drawing?.strokes ?? []),
       { color: drawingColor, size: drawingSize, points: drawingPointsRef.current },
     ]);
   };
 
-  const commitStroke = () => {
-    if (!isDrawer || drawingPointsRef.current.length < 2) {
+  const handlePointerMove = (event: PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawer || !canvasRef.current || !isPointerDownRef.current || activePointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    event.preventDefault();
+    drawingPointsRef.current = [...drawingPointsRef.current, getCanvasPoint(canvasRef.current, event)];
+    drawStrokes(canvasRef.current, [
+      ...(stage.drawing?.strokes ?? []),
+      { color: drawingColor, size: drawingSize, points: drawingPointsRef.current },
+    ]);
+  };
+
+  const commitStroke = (event?: PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawer) {
+      return;
+    }
+
+    event?.preventDefault();
+    if (canvasRef.current && event && canvasRef.current.hasPointerCapture(event.pointerId)) {
+      canvasRef.current.releasePointerCapture(event.pointerId);
+    }
+
+    if (drawingPointsRef.current.length === 0) {
       isPointerDownRef.current = false;
+      activePointerIdRef.current = null;
       drawingPointsRef.current = [];
       return;
     }
@@ -254,6 +330,7 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
       points: drawingPointsRef.current,
     });
     isPointerDownRef.current = false;
+    activePointerIdRef.current = null;
     drawingPointsRef.current = [];
   };
 
@@ -360,13 +437,18 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
                 {stage.wordSearch.grid.map((row, rowIndex) =>
                   row.map((letter, colIndex) => {
                     const selected = selectedWordCells.some(([selectedRow, selectedCol]) => selectedRow === rowIndex && selectedCol === colIndex);
+                    const found = foundWordCells.has(`${rowIndex}-${colIndex}`);
                     return (
                       <button
                         key={`${rowIndex}-${colIndex}`}
                         type="button"
                         onClick={() => toggleWordSearchCell([rowIndex, colIndex])}
                         className={`aspect-square rounded-2xl border text-sm font-semibold transition sm:text-lg ${
-                          selected ? "border-cyan-300 bg-cyan-300/15 text-parchment" : "border-white/10 bg-slate-950/60 text-mist/85"
+                          selected
+                            ? "border-cyan-300 bg-cyan-300/15 text-parchment"
+                            : found
+                              ? "border-emerald-300/30 bg-emerald-400/10 text-parchment"
+                              : "border-white/10 bg-slate-950/60 text-mist/85"
                         }`}
                       >
                         {letter}
@@ -379,6 +461,9 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
               <div className="mt-4 rounded-[1.5rem] border border-cyan-200/10 bg-cyan-300/5 p-4">
                 <p className="text-xs uppercase tracking-[0.25em] text-cyan-100/70">Seleccion actual</p>
                 <p className="mt-2 text-xl tracking-[0.3em] text-parchment">{wordSearchSelection || "..."}</p>
+                <p className="mt-2 text-sm leading-6 text-cyan-50/70">
+                  Marca la ruta exacta de cada palabra. Puede doblar en esquinas si el nivel lo pide.
+                </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -422,8 +507,11 @@ export function RoundScreen({ room, me, onSubmit, onEnd, onDrawingStroke, onClea
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={commitStroke}
+                onPointerCancel={commitStroke}
                 onPointerLeave={commitStroke}
-                className={`w-full rounded-[1.75rem] border border-white/10 bg-slate-950 ${isDrawer ? "cursor-crosshair" : "cursor-default"}`}
+                onContextMenu={(event) => event.preventDefault()}
+                className={`w-full select-none rounded-[1.75rem] border border-white/10 bg-slate-950 ${isDrawer ? "cursor-crosshair" : "cursor-default"}`}
+                style={{ touchAction: "none" }}
               />
 
               {isDrawer ? (

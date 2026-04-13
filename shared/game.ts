@@ -55,6 +55,10 @@ export interface CrosswordPublicData {
 export interface WordSearchPublicData {
   grid: string[][];
   words: string[];
+  paths: Array<{
+    word: string;
+    cells: Array<[number, number]>;
+  }>;
 }
 
 export interface DrawingStroke {

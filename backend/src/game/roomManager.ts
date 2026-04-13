@@ -76,6 +76,34 @@ function normalizeText(value: string) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function sanitizeDrawingStroke(stroke: DrawingStroke): DrawingStroke | null {
+  if (!stroke || typeof stroke.color !== "string" || !Array.isArray(stroke.points)) {
+    return null;
+  }
+
+  const points = stroke.points
+    .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y))
+    .slice(0, 400)
+    .map((point) => ({
+      x: clamp(point.x, 0, 1),
+      y: clamp(point.y, 0, 1),
+    }));
+
+  if (points.length === 0) {
+    return null;
+  }
+
+  return {
+    color: stroke.color,
+    size: clamp(Number.isFinite(stroke.size) ? stroke.size : 8, 2, 24),
+    points,
+  };
+}
+
 function sanitizePlaylist(playlist: MiniGameType[] | undefined) {
   const validIds = new Set(MINI_GAME_CATALOG.map((game) => game.id));
   const seen = new Set<MiniGameType>();
@@ -476,7 +504,12 @@ export function addDrawingStroke(room: RoomInternal, playerId: string, stroke: D
     return { error: "Solo el dibujante puede usar el lienzo." };
   }
 
-  room.stage.drawing.strokes.push(stroke);
+  const sanitizedStroke = sanitizeDrawingStroke(stroke);
+  if (!sanitizedStroke) {
+    return { error: "El trazo enviado no es valido." };
+  }
+
+  room.stage.drawing.strokes.push(sanitizedStroke);
   room.lastActivityAt = Date.now();
   return { room };
 }

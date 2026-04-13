@@ -10,109 +10,292 @@ const brushPalette = ["#f8fafc", "#f59e0b", "#22d3ee", "#34d399", "#fb7185"];
 
 const crosswordByDifficulty = {
   explorador: {
-    answer: "LINTERNA",
-    clue: "Objeto que ilumina los pasillos del misterio.",
+    answer: "BRUJULA",
+    clue: "Te orienta cuando apenas empiezas la expedicion.",
     size: 8,
     row: 3,
     startCol: 0,
-    bank: ["L", "I", "N", "T", "E", "R", "N", "A", "M", "P", "O", "S"],
+    bank: ["B", "R", "U", "J", "U", "L", "A", "M", "A", "P", "O", "S"],
   },
   agente: {
-    answer: "BRUJULA",
-    clue: "Sirve para no perder la ruta cuando todo gira.",
-    size: 8,
+    answer: "CODIGO",
+    clue: "La clave principal del caso esta escondida en esta palabra.",
+    size: 7,
     row: 2,
     startCol: 0,
-    bank: ["B", "R", "U", "J", "U", "L", "A", "C", "L", "A", "V", "E"],
+    bank: ["C", "O", "D", "I", "G", "O", "L", "L", "A", "V", "E"],
   },
   leyenda: {
-    answer: "LABERINTO",
-    clue: "Lugar lleno de giros donde la salida nunca parece cerca.",
-    size: 10,
+    answer: "RELIQUIA",
+    clue: "Pieza legendaria que justifica toda la busqueda.",
+    size: 9,
     row: 4,
     startCol: 0,
-    bank: ["L", "A", "B", "E", "R", "I", "N", "T", "O", "S", "M", "A", "P"],
+    bank: ["R", "E", "L", "I", "Q", "U", "I", "A", "M", "A", "P", "S"],
   },
 } satisfies Record<DifficultyLevel, { answer: string; clue: string; size: number; row: number; startCol: number; bank: string[] }>;
 
 const wordSearchByDifficulty = {
   explorador: {
     grid: [
-      ["M", "A", "P", "A", "X", "R"],
-      ["T", "O", "R", "R", "E", "L"],
-      ["C", "L", "A", "V", "E", "A"],
-      ["P", "I", "S", "T", "A", "S"],
-      ["L", "U", "Z", "N", "O", "R"],
-      ["R", "U", "T", "A", "O", "K"],
+      ["M", "A", "P", "A", "R", "S"],
+      ["L", "I", "N", "T", "E", "R"],
+      ["O", "B", "S", "E", "N", "U"],
+      ["B", "R", "U", "J", "U", "L"],
+      ["A", "D", "A", "C", "R", "A"],
+      ["R", "U", "T", "A", "S", "L"],
     ],
-    words: ["MAPA", "TORRE", "CLAVE"],
+    words: ["MAPA", "LINTERNA", "BRUJULA", "RUTA"],
+    paths: [
+      {
+        word: "MAPA",
+        cells: [
+          [0, 0],
+          [0, 1],
+          [0, 2],
+          [0, 3],
+        ],
+      },
+      {
+        word: "LINTERNA",
+        cells: [
+          [1, 0],
+          [1, 1],
+          [1, 2],
+          [1, 3],
+          [1, 4],
+          [1, 5],
+          [2, 5],
+          [3, 5],
+        ],
+      },
+      {
+        word: "BRUJULA",
+        cells: [
+          [3, 0],
+          [3, 1],
+          [3, 2],
+          [3, 3],
+          [3, 4],
+          [4, 4],
+          [4, 3],
+          [4, 2],
+        ],
+      },
+      {
+        word: "RUTA",
+        cells: [
+          [5, 0],
+          [5, 1],
+          [5, 2],
+          [5, 3],
+        ],
+      },
+    ],
   },
   agente: {
     grid: [
-      ["B", "A", "L", "C", "O", "N", "X"],
-      ["M", "I", "S", "I", "O", "N", "L"],
-      ["C", "O", "D", "I", "G", "O", "A"],
-      ["L", "I", "N", "T", "E", "R", "N"],
-      ["P", "I", "S", "T", "A", "S", "D"],
-      ["R", "U", "T", "A", "S", "O", "O"],
-      ["E", "S", "C", "A", "L", "A", "R"],
+      ["C", "O", "D", "I", "G", "O", "S"],
+      ["M", "E", "N", "S", "A", "J", "E"],
+      ["P", "I", "S", "T", "A", "R", "D"],
+      ["N", "A", "L", "L", "A", "V", "E"],
+      ["O", "K", "X", "H", "C", "I", "V"],
+      ["R", "A", "R", "C", "H", "I", "V"],
+      ["T", "R", "A", "Z", "A", "L", "O"],
     ],
-    words: ["CODIGO", "MISION", "RUTA", "LINTERNA"],
+    words: ["CODIGO", "MENSAJE", "PISTA", "LLAVE", "ARCHIVO"],
+    paths: [
+      {
+        word: "CODIGO",
+        cells: [
+          [0, 0],
+          [0, 1],
+          [0, 2],
+          [0, 3],
+          [0, 4],
+          [0, 5],
+        ],
+      },
+      {
+        word: "MENSAJE",
+        cells: [
+          [1, 0],
+          [1, 1],
+          [1, 2],
+          [1, 3],
+          [1, 4],
+          [1, 5],
+          [1, 6],
+        ],
+      },
+      {
+        word: "PISTA",
+        cells: [
+          [2, 0],
+          [2, 1],
+          [2, 2],
+          [2, 3],
+          [2, 4],
+        ],
+      },
+      {
+        word: "LLAVE",
+        cells: [
+          [3, 2],
+          [3, 3],
+          [3, 4],
+          [3, 5],
+          [3, 6],
+        ],
+      },
+      {
+        word: "ARCHIVO",
+        cells: [
+          [5, 1],
+          [5, 2],
+          [5, 3],
+          [5, 4],
+          [5, 5],
+          [5, 6],
+          [6, 6],
+          [6, 5],
+        ],
+      },
+    ],
   },
   leyenda: {
     grid: [
-      ["S", "E", "C", "R", "E", "T", "O", "X"],
-      ["B", "R", "U", "J", "U", "L", "A", "M"],
       ["L", "A", "B", "E", "R", "I", "N", "T"],
-      ["A", "C", "E", "R", "T", "I", "J", "O"],
       ["P", "A", "S", "A", "D", "I", "Z", "O"],
-      ["T", "E", "R", "R", "A", "Z", "A", "S"],
-      ["M", "A", "P", "A", "S", "O", "M", "B"],
-      ["R", "U", "T", "A", "F", "I", "N", "A"],
+      ["A", "C", "E", "R", "T", "I", "J", "O"],
+      ["R", "E", "L", "I", "Q", "U", "I", "A"],
+      ["T", "V", "X", "R", "U", "N", "A", "S"],
+      ["A", "P", "E", "C", "O", "D", "I", "G"],
+      ["L", "M", "R", "O", "T", "A", "L", "O"],
+      ["M", "A", "P", "A", "S", "O", "L", "S"],
     ],
-    words: ["BRUJULA", "LABERINTO", "ACERTIJO", "PASADIZO"],
+    words: ["LABERINTO", "PASADIZO", "ACERTIJO", "RELIQUIA", "RUNAS", "PORTAL"],
+    paths: [
+      {
+        word: "LABERINTO",
+        cells: [
+          [0, 0],
+          [0, 1],
+          [0, 2],
+          [0, 3],
+          [0, 4],
+          [0, 5],
+          [0, 6],
+          [0, 7],
+          [1, 7],
+        ],
+      },
+      {
+        word: "PASADIZO",
+        cells: [
+          [1, 0],
+          [1, 1],
+          [1, 2],
+          [1, 3],
+          [1, 4],
+          [1, 5],
+          [1, 6],
+          [1, 7],
+        ],
+      },
+      {
+        word: "ACERTIJO",
+        cells: [
+          [2, 0],
+          [2, 1],
+          [2, 2],
+          [2, 3],
+          [2, 4],
+          [2, 5],
+          [2, 6],
+          [2, 7],
+        ],
+      },
+      {
+        word: "RELIQUIA",
+        cells: [
+          [3, 0],
+          [3, 1],
+          [3, 2],
+          [3, 3],
+          [3, 4],
+          [3, 5],
+          [3, 6],
+          [3, 7],
+        ],
+      },
+      {
+        word: "RUNAS",
+        cells: [
+          [4, 3],
+          [4, 4],
+          [4, 5],
+          [4, 6],
+          [4, 7],
+        ],
+      },
+      {
+        word: "PORTAL",
+        cells: [
+          [5, 1],
+          [5, 2],
+          [5, 3],
+          [6, 3],
+          [6, 4],
+          [6, 5],
+        ],
+      },
+    ],
   },
-} satisfies Record<DifficultyLevel, { grid: string[][]; words: string[] }>;
+} satisfies Record<
+  DifficultyLevel,
+  { grid: string[][]; words: string[]; paths: Array<{ word: string; cells: Array<[number, number]> }> }
+>;
 
 const drawingByDifficulty = {
   explorador: {
-    prompt: "Linterna",
-    options: ["Linterna", "Brújula", "Mochila", "Llave"],
+    prompt: "Mochila",
+    options: ["Mochila", "Brújula", "Ventana", "Candado"],
   },
   agente: {
-    prompt: "Brújula",
-    options: ["Reloj", "Brújula", "Candado", "Ventana"],
+    prompt: "Candado",
+    options: ["Reloj", "Candado", "Brújula", "Campana"],
   },
   leyenda: {
-    prompt: "Mapa",
-    options: ["Mapa", "Escalera", "Maleta", "Campana"],
+    prompt: "Reliquia",
+    options: ["Reliquia", "Mapa", "Escalera", "Maleta"],
   },
 } satisfies Record<DifficultyLevel, { prompt: string; options: string[] }>;
 
 const memoryByDifficulty = {
   explorador: [
-    ["astro", "🌙", "Luna", "from-indigo-400/40 to-sky-400/10"],
-    ["llave", "🗝️", "Llave", "from-amber-300/40 to-gold/10"],
+    ["linterna", "🏮", "Linterna", "from-amber-300/40 to-gold/10"],
     ["mapa", "🗺️", "Mapa", "from-emerald-300/40 to-teal-400/10"],
-    ["lupa", "🔎", "Lupa", "from-cyan-300/40 to-blue-400/10"],
+    ["brujula", "🧭", "Brújula", "from-cyan-300/40 to-blue-400/10"],
+    ["mochila", "🎒", "Mochila", "from-indigo-400/40 to-sky-400/10"],
   ],
   agente: [
-    ["astro", "🌙", "Luna", "from-indigo-400/40 to-sky-400/10"],
+    ["codigo", "🔐", "Código", "from-lime-300/40 to-emerald-400/10"],
     ["llave", "🗝️", "Llave", "from-amber-300/40 to-gold/10"],
-    ["mapa", "🗺️", "Mapa", "from-emerald-300/40 to-teal-400/10"],
+    ["archivo", "🗂️", "Archivo", "from-emerald-300/40 to-teal-400/10"],
     ["lupa", "🔎", "Lupa", "from-cyan-300/40 to-blue-400/10"],
-    ["gema", "💎", "Gema", "from-fuchsia-300/40 to-rose-400/10"],
+    ["mensaje", "✉️", "Mensaje", "from-fuchsia-300/40 to-rose-400/10"],
     ["reloj", "⏰", "Reloj", "from-orange-300/40 to-amber-400/10"],
   ],
   leyenda: [
-    ["astro", "🌙", "Luna", "from-indigo-400/40 to-sky-400/10"],
-    ["llave", "🗝️", "Llave", "from-amber-300/40 to-gold/10"],
+    ["reliquia", "💎", "Reliquia", "from-fuchsia-300/40 to-rose-400/10"],
+    ["runas", "📜", "Runas", "from-indigo-400/40 to-sky-400/10"],
     ["mapa", "🗺️", "Mapa", "from-emerald-300/40 to-teal-400/10"],
-    ["lupa", "🔎", "Lupa", "from-cyan-300/40 to-blue-400/10"],
-    ["gema", "💎", "Gema", "from-fuchsia-300/40 to-rose-400/10"],
-    ["reloj", "⏰", "Reloj", "from-orange-300/40 to-amber-400/10"],
+    ["portal", "🪞", "Portal", "from-cyan-300/40 to-blue-400/10"],
+    ["acertijo", "🧩", "Acertijo", "from-orange-300/40 to-amber-400/10"],
+    ["pasadizo", "🚪", "Pasadizo", "from-lime-300/40 to-emerald-400/10"],
     ["candado", "🔐", "Candado", "from-lime-300/40 to-emerald-400/10"],
-    ["pluma", "🪶", "Pluma", "from-pink-300/40 to-fuchsia-400/10"],
+    ["brujula", "🧭", "Brújula", "from-pink-300/40 to-fuchsia-400/10"],
   ],
 } satisfies Record<DifficultyLevel, Array<[string, string, string, string]>>;
 
@@ -123,6 +306,28 @@ function normalizeText(value: string) {
     .toUpperCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+function validateWordSearchConfig(
+  difficulty: DifficultyLevel,
+  config: { grid: string[][]; words: string[]; paths: Array<{ word: string; cells: Array<[number, number]> }> },
+) {
+  const listedWords = [...config.words].map(normalizeText).sort().join("|");
+  const pathWords = config.paths.map((entry) => normalizeText(entry.word)).sort().join("|");
+
+  if (listedWords !== pathWords) {
+    throw new Error(`Word search words mismatch for ${difficulty}`);
+  }
+
+  config.paths.forEach((entry) => {
+    const tracedWord = entry.cells
+      .map(([row, col]) => config.grid[row]?.[col] ?? "")
+      .join("");
+
+    if (normalizeText(tracedWord) !== normalizeText(entry.word)) {
+      throw new Error(`Invalid word path for ${difficulty}: ${entry.word}`);
+    }
+  });
 }
 
 function buildCrosswordStage(difficulty: DifficultyLevel): StageDefinition {
@@ -158,6 +363,7 @@ function buildCrosswordStage(difficulty: DifficultyLevel): StageDefinition {
 
 function buildWordSearchStage(difficulty: DifficultyLevel): StageDefinition {
   const config = wordSearchByDifficulty[difficulty];
+  validateWordSearchConfig(difficulty, config);
   return {
     id: `wordsearch-${difficulty}`,
     miniGameType: "sopa",
