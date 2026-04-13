@@ -78,7 +78,7 @@ export interface StagePublic {
   title: string;
   prompt: string;
   inputLabel: string;
-  answerKind: "single-choice" | "text";
+  answerKind: "single-choice" | "text" | "sequence";
   options?: string[];
   memorySequence?: string[];
   memoryRevealMs?: number;

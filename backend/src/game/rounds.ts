@@ -6,7 +6,7 @@ export const miniGames: MiniGameDefinition[] = [
     stages: [
       {
         id: "guardia-1",
-        title: "Lectura del peligro",
+        title: "Radar de peligro",
         prompt: "¿Qué detalle deja claro que Amanda está en riesgo real mientras escala?",
         inputLabel: "Elige la mejor respuesta",
         answerKind: "single-choice",
@@ -21,7 +21,7 @@ export const miniGames: MiniGameDefinition[] = [
       },
       {
         id: "guardia-2",
-        title: "Último recurso",
+        title: "Rescate activado",
         prompt: "¿Quién cambia la situación cuando Amanda está a punto de caer?",
         inputLabel: "Elige al salvador",
         answerKind: "single-choice",
@@ -51,10 +51,10 @@ export const miniGames: MiniGameDefinition[] = [
     stages: [
       {
         id: "memoria-1",
-        title: "Rescate en cadena",
-        prompt: "Memoriza la secuencia y escríbela en el mismo orden separada por comas.",
-        inputLabel: "Secuencia del rescate",
-        answerKind: "text",
+        title: "Cadena de rescate",
+        prompt: "Toca las piezas en el orden correcto del rescate.",
+        inputLabel: "Arma la secuencia",
+        answerKind: "sequence",
         memorySequence: ["Resbala", "Dron", "Apoyo", "Sube"],
         memoryRevealMs: 5000,
         answer: "RESBALA, DRON, APOYO, SUBE",
@@ -62,10 +62,10 @@ export const miniGames: MiniGameDefinition[] = [
       },
       {
         id: "memoria-2",
-        title: "Canal de ayuda",
-        prompt: "Memoriza la secuencia y escríbela en el mismo orden separada por comas.",
-        inputLabel: "Secuencia de apoyo",
-        answerKind: "text",
+        title: "Señal secreta",
+        prompt: "Toca las piezas en el orden en que Eric salva la misión.",
+        inputLabel: "Arma la secuencia",
+        answerKind: "sequence",
         memorySequence: ["Interferencias", "Esme", "Resumen", "Pantalla"],
         memoryRevealMs: 5000,
         answer: "INTERFERENCIAS, ESME, RESUMEN, PANTALLA",
@@ -74,9 +74,9 @@ export const miniGames: MiniGameDefinition[] = [
       {
         id: "memoria-3",
         title: "Ruta final",
-        prompt: "Memoriza la secuencia y escríbela en el mismo orden separada por comas.",
-        inputLabel: "Instrucciones finales",
-        answerKind: "text",
+        prompt: "Toca las piezas en el orden correcto para llegar a salvo.",
+        inputLabel: "Arma la secuencia",
+        answerKind: "sequence",
         memorySequence: ["Izquierda", "Sube", "Terraza", "Jardineras"],
         memoryRevealMs: 5000,
         answer: "IZQUIERDA, SUBE, TERRAZA, JARDINERAS",
@@ -89,9 +89,9 @@ export const miniGames: MiniGameDefinition[] = [
     stages: [
       {
         id: "comandos-1",
-        title: "Señal cortada",
-        prompt: "Cuando se corta la comunicación con Amanda, ¿qué hace Eric para no perder la misión?",
-        inputLabel: "Elige la acción correcta",
+        title: "Fallo de señal",
+        prompt: "¿Qué hace Eric cuando la comunicación se corta?",
+        inputLabel: "Elige la acción",
         answerKind: "single-choice",
         options: [
           "Busca ayuda en Esme y le cuenta la verdad",
@@ -104,24 +104,24 @@ export const miniGames: MiniGameDefinition[] = [
       },
       {
         id: "comandos-2",
-        title: "Guía precisa",
-        prompt: "¿Qué instrucción le da Eric a Amanda cuando por fin vuelve a escucharla?",
-        inputLabel: "Elige la instrucción correcta",
-        answerKind: "single-choice",
+        title: "Ruta de Eric",
+        prompt: "Toca las instrucciones en el orden correcto.",
+        inputLabel: "Arma la ruta",
+        answerKind: "sequence",
         options: [
-          "Ve a tu izquierda unos diez metros y luego sigue subiendo",
-          "Baja dos pisos y espera",
-          "Rompe la cristalera de inmediato",
-          "Regresa a la calle",
+          "Izquierda",
+          "Sube",
+          "Terraza",
+          "Escóndete",
         ],
-        answer: "Ve a tu izquierda unos diez metros y luego sigue subiendo",
-        explanation: "Esa es la orden exacta con la que Eric recupera el control del avance.",
+        answer: "IZQUIERDA, SUBE, TERRAZA, ESCONDETE",
+        explanation: "Eric recompone la ruta con cuatro órdenes seguidas: izquierda, sube, terraza y escóndete.",
       },
       {
         id: "comandos-3",
-        title: "Entrada al despacho",
-        prompt: "¿Qué advierte Eric justo antes de que Amanda entre en el despacho de Irma Dagon?",
-        inputLabel: "Elige la advertencia",
+        title: "Alerta final",
+        prompt: "¿Qué advierte Eric justo antes del despacho?",
+        inputLabel: "Elige la alerta",
         answerKind: "single-choice",
         options: [
           "Un guardia se acerca por el pasillo",
@@ -139,9 +139,9 @@ export const miniGames: MiniGameDefinition[] = [
     stages: [
       {
         id: "decision-1",
-        title: "Aliada inesperada",
-        prompt: "¿Por qué Esme se vuelve clave para que la misión siga viva?",
-        inputLabel: "Elige la razón principal",
+        title: "Aliada sorpresa",
+        prompt: "¿Por qué Esme se vuelve clave para la misión?",
+        inputLabel: "Elige la razón",
         answerKind: "single-choice",
         options: [
           "Porque Eric necesita ayuda para llegar a tiempo al piso correcto",
@@ -154,8 +154,8 @@ export const miniGames: MiniGameDefinition[] = [
       },
       {
         id: "decision-2",
-        title: "Sangre fría",
-        prompt: "¿Qué entiende Amanda que necesita para salir viva de la terraza?",
+        title: "Mente fría",
+        prompt: "¿Qué necesita Amanda para salir viva de la terraza?",
         inputLabel: "Elige la mejor decisión",
         answerKind: "single-choice",
         options: [
@@ -169,8 +169,8 @@ export const miniGames: MiniGameDefinition[] = [
       },
       {
         id: "decision-3",
-        title: "Cobertura correcta",
-        prompt: "¿Qué hace Amanda en cuanto Eric menciona las jardineras?",
+        title: "Salto oculto",
+        prompt: "¿Qué hace Amanda cuando Eric menciona las jardineras?",
         inputLabel: "Elige la reacción",
         answerKind: "single-choice",
         options: [
@@ -189,18 +189,19 @@ export const miniGames: MiniGameDefinition[] = [
     stages: [
       {
         id: "altura-1",
-        title: "Paso a paso",
-        prompt: "Ordena mentalmente la acción correcta: ¿qué viene después de que Amanda logra apoyar el pie?",
-        inputLabel: "Escribe el siguiente paso clave",
-        answerKind: "text",
-        answer: "SE RECUPERA Y CONTINUA SUBIENDO",
-        explanation: "El nuevo apoyo le permite recuperar el control y seguir la escalada.",
+        title: "Subida extrema",
+        prompt: "Toca los pasos en el orden correcto para seguir escalando.",
+        inputLabel: "Arma la secuencia",
+        answerKind: "sequence",
+        options: ["Apoyo", "Respira", "Se aferra", "Sigue"],
+        answer: "SE AFERRA, APOYO, RESPIRA, SIGUE",
+        explanation: "Primero se aferra, luego encuentra apoyo, recupera el aire y sigue subiendo.",
       },
       {
         id: "altura-2",
-        title: "Obstáculo real",
+        title: "Corte de voz",
         prompt: "¿Qué problema vuelve crítica la escena antes de que Eric la guíe?",
-        inputLabel: "Elige el problema principal",
+        inputLabel: "Elige el problema",
         answerKind: "single-choice",
         options: [
           "La comunicación se corta entre interferencias",
@@ -213,9 +214,9 @@ export const miniGames: MiniGameDefinition[] = [
       },
       {
         id: "altura-3",
-        title: "Resultado final",
+        title: "Meta final",
         prompt: "¿Qué consigue Amanda al final del tramo guiado por Eric?",
-        inputLabel: "Elige el resultado correcto",
+        inputLabel: "Elige el resultado",
         answerKind: "single-choice",
         options: [
           "Colarse en la terraza del despacho de Irma Dagon",
